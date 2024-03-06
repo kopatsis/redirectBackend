@@ -11,10 +11,11 @@ import (
 )
 
 type EntryWithParam struct {
-	User    int64  `json:"user"`
-	RealURL string `json:"url"`
-	Date    time.Time
-	Param   string
+	User     int64  `json:"user"`
+	RealURL  string `json:"url"`
+	Date     time.Time
+	Archived bool
+	Param    string
 }
 
 func GetEntries(client *datastore.Client) gin.HandlerFunc {
@@ -33,7 +34,7 @@ func GetEntries(client *datastore.Client) gin.HandlerFunc {
 
 		var entries []EntryWithParam
 
-		query := datastore.NewQuery("Entry").FilterField("User", "=", id10)
+		query := datastore.NewQuery("Entry").FilterField("User", "=", id10).FilterField("Archived", "=", false)
 		keys, err := client.GetAll(c, query, &entries)
 		if err != nil {
 			fmt.Printf("Failed to get all: %v", err)

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"cloud.google.com/go/datastore"
@@ -14,13 +13,13 @@ import (
 
 const projectID = "cs361a"
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	fmt.Fprint(w, "Hello, World!")
-}
+// func indexHandler(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path != "/" {
+// 		http.NotFound(w, r)
+// 		return
+// 	}
+// 	fmt.Fprint(w, "Hello, World!")
+// }
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -61,6 +60,7 @@ func main() {
 	rtr.POST("/entry", routes.PostEntry(client))
 	rtr.GET("/entry/:id", routes.GetEntry(client))
 	rtr.DELETE("/entry/:id", routes.DeleteEntry(client))
+	rtr.PATCH("/entry/:id", routes.PatchEntry(client))
 	rtr.GET("/user/:id/entries", routes.GetEntries(client))
 	rtr.GET("/r/:id", routes.Redirect(client))
 

@@ -14,9 +14,10 @@ import (
 const baseChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 type Entry struct {
-	User    int64  `json:"user"`
-	RealURL string `json:"url"`
-	Date    time.Time
+	User     int64  `json:"user"`
+	RealURL  string `json:"url"`
+	Archived bool
+	Date     time.Time
 }
 
 func ensureHttpPrefix(url string) string {
@@ -61,19 +62,18 @@ func PostEntry(client *datastore.Client) gin.HandlerFunc {
 		}
 
 		entry.Date = time.Now()
+		entry.Archived = false
 		entry.RealURL = ensureHttpPrefix(entry.RealURL)
 
 		key := datastore.IncompleteKey("Entry", nil)
 		newkey, err := client.Put(c, key, &entry)
 		if err != nil {
-			if err != nil {
-				fmt.Printf("Failed to post: %v", err)
-				c.JSON(400, gin.H{
-					"Error Type":  "Failed to post entry",
-					"Exact Error": err.Error(),
-				})
-				return
-			}
+			fmt.Printf("Failed to post: %v", err)
+			c.JSON(400, gin.H{
+				"Error Type":  "Failed to post entry",
+				"Exact Error": err.Error(),
+			})
+			return
 		}
 
 		// param := strconv.FormatInt(newkey.ID, 36)

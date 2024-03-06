@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func DeleteEntry(client *datastore.Client) gin.HandlerFunc {
+func PatchEntry(client *datastore.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id62 := c.Param("id")
@@ -34,7 +34,7 @@ func DeleteEntry(client *datastore.Client) gin.HandlerFunc {
 			return
 		}
 
-		entry.Archived = true
+		entry.Archived = false
 
 		if _, err := client.Put(c, getkey, &entry); err != nil {
 			fmt.Printf("Failed to post: %v", err)
@@ -44,15 +44,6 @@ func DeleteEntry(client *datastore.Client) gin.HandlerFunc {
 			})
 			return
 		}
-
-		// if err := client.Delete(c, getkey); err != nil {
-		// 	fmt.Printf("Failed to delete: %v", err)
-		// 	c.JSON(400, gin.H{
-		// 		"Error Type":  "Failed to delete entry",
-		// 		"Exact Error": err.Error(),
-		// 	})
-		// 	return
-		// }
 
 		c.Status(204)
 	}

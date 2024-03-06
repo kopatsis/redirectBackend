@@ -12,7 +12,7 @@ import (
 
 func fromBase62(str string) (int64, error) {
 	if len(str) > 11 {
-		return 0, errors.New("Too large string to be actual int64")
+		return 0, errors.New("too large string to be actual int64")
 	}
 	var result int64
 	base := len(baseChars)
@@ -20,7 +20,7 @@ func fromBase62(str string) (int64, error) {
 		power := len(str) - i - 1
 		index := int64(strings.IndexRune(baseChars, char))
 		if index == -1 {
-			return 0, errors.New("Character used in id parameter not allowed")
+			return 0, errors.New("character used in id parameter not allowed")
 		}
 		result += index * int64(math.Pow(float64(base), float64(power)))
 	}
@@ -49,6 +49,13 @@ func GetEntry(client *datastore.Client) gin.HandlerFunc {
 			c.JSON(400, gin.H{
 				"Error Type":  "Failed to get entry",
 				"Exact Error": err.Error(),
+			})
+			return
+		}
+
+		if entry.Archived {
+			c.JSON(404, gin.H{
+				"Error Type": "Link has been archived and deleted",
 			})
 			return
 		}
