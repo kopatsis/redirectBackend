@@ -57,6 +57,7 @@ func main() {
 	})
 
 	rtr.POST("/user", routes.PostUser(client))
+	rtr.POST("/login", routes.PostUser(client))
 	rtr.POST("/entry", routes.PostEntry(client))
 	rtr.GET("/entry/:id", routes.GetEntry(client))
 	rtr.DELETE("/entry/:id", routes.DeleteEntry(client))
