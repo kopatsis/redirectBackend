@@ -34,7 +34,7 @@ func PostLoginUser(client *datastore.Client) gin.HandlerFunc {
 
 		query := datastore.NewQuery("LoginUser").FilterField("AuthSub", "=", user.AuthSub).Limit(1)
 
-		var results []User
+		var results []LoginUser
 		keys, err := client.GetAll(c, query, &results)
 		if err != nil {
 			c.JSON(400, gin.H{
