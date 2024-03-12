@@ -65,6 +65,8 @@ func main() {
 	rtr.GET("/user/:id/entries", routes.GetEntries(client))
 	rtr.GET("/r/:id", routes.Redirect(client))
 
+	rtr.POST("/analyze", routes.PostClick(client))
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
