@@ -66,6 +66,9 @@ func main() {
 	rtr.GET("/r/:id", routes.Redirect(client))
 
 	rtr.POST("/analyze", routes.PostClick(client))
+	rtr.GET("/analyze/hourly/:id", routes.GetClicksHourly(client))
+	rtr.GET("/analyze/daily/:id", routes.GetClicksDaily(client))
+	rtr.GET("/analyze/weekly/:id", routes.GetClicksWeekly(client))
 
 	port := os.Getenv("PORT")
 	if port == "" {
