@@ -1,0 +1,6 @@
+indexes:
+
+- kind: Click
+  properties:
+  - name: Param
+  - name: Date
