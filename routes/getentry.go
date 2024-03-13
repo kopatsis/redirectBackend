@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Converts string representing base 62 number to base 10 int64
 func fromBase62(str string) (int64, error) {
 	if len(str) > 11 {
 		return 0, errors.New("too large string to be actual int64")
@@ -27,17 +28,22 @@ func fromBase62(str string) (int64, error) {
 	return result, nil
 }
 
+// Sets error message for get request using gin Context
+func errorGet(c *gin.Context, err error, reason string, errorCode int) {
+	fmt.Printf("Failed to get: %v", err)
+	c.JSON(errorCode, gin.H{
+		"Error Type":  reason,
+		"Exact Error": err.Error(),
+	})
+}
+
+// Retrieves the real URL for a URL if one exists in the system using the provided ID (or sends error)
 func GetEntry(client *datastore.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		id62 := c.Param("id")
-		id10, err := fromBase62(id62)
+		id10, err := fromBase62(c.Param("id"))
 		if err != nil {
-			fmt.Printf("Failed to get: %v", err)
-			c.JSON(400, gin.H{
-				"Error Type":  "Failed to convert id param",
-				"Exact Error": err.Error(),
-			})
+			errorGet(c, err, "Failed to convert id param", 400)
 			return
 		}
 
@@ -45,18 +51,12 @@ func GetEntry(client *datastore.Client) gin.HandlerFunc {
 		var entry Entry
 
 		if err := client.Get(c, getkey, &entry); err != nil {
-			fmt.Printf("Failed to get: %v", err)
-			c.JSON(400, gin.H{
-				"Error Type":  "Failed to get entry",
-				"Exact Error": err.Error(),
-			})
+			errorGet(c, err, "Failed to get entry", 400)
 			return
 		}
 
 		if entry.Archived {
-			c.JSON(404, gin.H{
-				"Error Type": "Link has been archived and deleted",
-			})
+			errorGet(c, errors.New("entry cannot be found"), "Link has been archived and deleted", 404)
 			return
 		}
 

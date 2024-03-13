@@ -7,17 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Sets error message for patch request using gin Context
+func errorPatch(c *gin.Context, err error, reason string) {
+	fmt.Printf("Failed to patch: %v", err)
+	c.JSON(400, gin.H{
+		"Error Type":  reason,
+		"Exact Error": err.Error(),
+	})
+}
+
+// Retrieves URL entry provided and patches status to unarchived, then sends confirmation
 func PatchEntry(client *datastore.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		id62 := c.Param("id")
-		id10, err := fromBase62(id62)
+		id10, err := fromBase62(c.Param("id"))
 		if err != nil {
-			fmt.Printf("Failed to get: %v", err)
-			c.JSON(400, gin.H{
-				"Error Type":  "Failed to convert id param",
-				"Exact Error": err.Error(),
-			})
+			errorPatch(c, err, "Failed to convert id param")
 			return
 		}
 
@@ -26,22 +31,14 @@ func PatchEntry(client *datastore.Client) gin.HandlerFunc {
 		getkey := datastore.IDKey("Entry", id10, nil)
 
 		if err := client.Get(c, getkey, &entry); err != nil {
-			fmt.Printf("Failed to get: %v", err)
-			c.JSON(400, gin.H{
-				"Error Type":  "Failed to get entry",
-				"Exact Error": err.Error(),
-			})
+			errorPatch(c, err, "Failed to get entry")
 			return
 		}
 
 		entry.Archived = false
 
 		if _, err := client.Put(c, getkey, &entry); err != nil {
-			fmt.Printf("Failed to post: %v", err)
-			c.JSON(400, gin.H{
-				"Error Type":  "Failed to post entry",
-				"Exact Error": err.Error(),
-			})
+			errorPatch(c, err, "Failed to post entry")
 			return
 		}
 
