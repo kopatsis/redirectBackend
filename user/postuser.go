@@ -3,6 +3,7 @@ package user
 import (
 	"c361main/datatypes"
 	"fmt"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/datastore"
@@ -30,7 +31,7 @@ func PostUser(client *datastore.Client) gin.HandlerFunc {
 		}
 
 		c.JSON(201, gin.H{
-			"key": newkey.ID,
+			"key": "DS-" + strconv.FormatInt(newkey.ID, 10),
 		})
 	}
 }
