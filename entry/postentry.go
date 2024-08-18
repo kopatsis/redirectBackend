@@ -4,6 +4,7 @@ import (
 	"c361main/convert"
 	"c361main/datatypes"
 	"fmt"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -35,6 +36,11 @@ func PostEntry(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		entry.InitalizeFormat()
+
+		if _, err := url.Parse(entry.RealURL); err != nil {
+			errorPost(c, err, "Not a URL that can be parsed")
+			return
+		}
 
 		id, err := PostEntryDB(db, &entry)
 		if err != nil {
