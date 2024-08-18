@@ -26,7 +26,7 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&datatypes.Shorten{})
+	db.AutoMigrate(&datatypes.Entry{})
 	db.AutoMigrate(&datatypes.Click{})
 
 	return db, nil
