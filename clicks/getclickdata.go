@@ -270,6 +270,9 @@ func ProcessClicksFree(clicks []datatypes.Click, param, realURL, userID string) 
 
 func GetClicksByParam(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		startTimer := time.Now()
+
 		userid, inFirebase, err := user.GetUserID(c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
@@ -312,6 +315,11 @@ func GetClicksByParam(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
 			c.JSON(200, gin.H{
 				"data": data,
 			})
+		}
+
+		elapsed := time.Since(startTimer)
+		if elapsed < 5*time.Second {
+			time.Sleep(5*time.Second - elapsed)
 		}
 	}
 }

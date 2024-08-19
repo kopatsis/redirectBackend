@@ -11,10 +11,10 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	dbUser := os.Getenv("dbUser")
-	dbPass := os.Getenv("dbPass")
-	dbHost := os.Getenv("dbHost")
-	dbName := os.Getenv("dbName")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASS")
+	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
 
 	if dbUser == "" || dbPass == "" || dbHost == "" || dbName == "" {
 		return nil, errors.New("missing a variable in .env to set up")

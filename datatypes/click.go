@@ -8,6 +8,7 @@ type Click struct {
 	ID        int `gorm:"primaryKey"`
 	ParamKey  int `gorm:"index"`
 	Time      time.Time
+	RealURL   string
 	City      string
 	Country   string
 	Browser   string
