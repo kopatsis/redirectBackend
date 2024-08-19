@@ -47,7 +47,7 @@ func GetEntriesDB(db *gorm.DB, user string) ([]datatypes.ShortenedEntry, error) 
 
 func GetEntries(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userid, err := user.GetUserID(c)
+		userid, _, err := user.GetUserID(c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return

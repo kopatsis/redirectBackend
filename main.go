@@ -5,13 +5,16 @@ import (
 	"c361main/platform"
 	"c361main/routes"
 	"context"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"os"
 
 	"cloud.google.com/go/datastore"
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"google.golang.org/api/option"
 )
 
 const projectID = "cs361a"
@@ -35,7 +38,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rtr := platform.New(db, client)
+	firebaseConfigBase64 := os.Getenv("FIREBASE_CONFIG_BASE64")
+	if firebaseConfigBase64 == "" {
+		log.Fatal("FIREBASE_CONFIG_BASE64 environment variable is not set.")
+	}
+
+	configJSON, err := base64.StdEncoding.DecodeString(firebaseConfigBase64)
+	if err != nil {
+		log.Fatalf("Error decoding FIREBASE_CONFIG_BASE64: %v", err)
+	}
+
+	sa := option.WithCredentialsJSON(configJSON)
+	firebase, err := firebase.NewApp(context.Background(), nil, sa)
+	if err != nil {
+		log.Fatalf("error initializing app: %v\n", err)
+	}
+
+	rtr := platform.New(db, client, firebase)
 
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -39,18 +39,18 @@ func GetSubFromJWT(c *gin.Context) (string, error, bool) {
 	return sub, nil, false
 }
 
-func GetUserID(c *gin.Context) (string, error) {
+func GetUserID(c *gin.Context) (string, bool, error) {
 	firebaseID, err, empty := GetSubFromJWT(c)
 	localid := c.GetHeader("X-User-ID")
 	if firebaseID != "" {
-		return firebaseID, nil
+		return firebaseID, true, nil
 	}
 	if localid != "" {
-		return localid, nil
+		return localid, false, nil
 	}
 	if empty {
-		return "", errors.New("local id not supplied in X-User-ID header")
+		return "", false, errors.New("local id not supplied in X-User-ID header")
 	}
-	return "", err
+	return "", false, err
 
 }
