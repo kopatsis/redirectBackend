@@ -2,6 +2,7 @@ package platform
 
 import (
 	"c361main/clicks"
+	"c361main/entries"
 	"c361main/entry"
 	"c361main/user"
 
@@ -21,7 +22,9 @@ func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App) *gin.Eng
 	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db))
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db))
 
+	router.GET("/entries", entries.GetEntries(db))
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase))
+	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase))
 
 	router.Use(CORSMiddleware())
 
