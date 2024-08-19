@@ -1,9 +1,11 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"strings"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -42,6 +44,7 @@ func GetSubFromJWT(c *gin.Context) (string, error, bool) {
 func GetUserID(c *gin.Context) (string, bool, error) {
 	firebaseID, err, empty := GetSubFromJWT(c)
 	localid := c.GetHeader("X-User-ID")
+
 	if firebaseID != "" {
 		return firebaseID, true, nil
 	}
@@ -53,4 +56,30 @@ func GetUserID(c *gin.Context) (string, bool, error) {
 	}
 	return "", false, err
 
+}
+
+func GetBothIDs(app *firebase.App, c *gin.Context) (string, string, error) {
+	localid := c.GetHeader("X-User-ID")
+	if localid == "" {
+		return "", "", errors.New("no local id")
+	}
+
+	authClient, err := app.Auth(context.Background())
+	if err != nil {
+		return "", "", err
+	}
+
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return "", "", err
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	token, err := authClient.VerifyIDToken(context.Background(), tokenString)
+	if err != nil {
+		return "", "", err
+	}
+
+	return token.UID, localid, nil
 }

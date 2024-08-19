@@ -15,8 +15,11 @@ import (
 func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App) *gin.Engine {
 	router := gin.Default()
 
+	router.Use(CORSMiddleware())
+
 	router.POST("/user", user.PostUser(client))
 	router.POST("/entry", entry.PostEntry(db))
+	router.POST("/merge", user.MergeUser(db, firebase))
 
 	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db))
 	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db))
@@ -25,8 +28,6 @@ func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App) *gin.Eng
 	router.GET("/entries", entries.GetEntries(db))
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase))
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase))
-
-	router.Use(CORSMiddleware())
 
 	return router
 
