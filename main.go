@@ -2,6 +2,7 @@ package main
 
 import (
 	"c361main/database"
+	"c361main/entries"
 	"c361main/platform"
 	"c361main/routes"
 	"context"
@@ -9,10 +10,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 )
@@ -53,6 +56,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("error initializing app: %v\n", err)
 	}
+
+	scheduler := gocron.NewScheduler(time.UTC)
+
+	_, err = scheduler.Every(8).Hours().Do(entries.DeleteArchivedEntries, db)
+	if err != nil {
+		log.Fatalf("Error scheduling cleanup job: %v", err)
+	}
+
+	scheduler.StartAsync()
 
 	rtr := platform.New(db, client, firebase)
 
