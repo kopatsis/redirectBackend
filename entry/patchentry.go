@@ -3,9 +3,12 @@ package entry
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"context"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"github.com/google/martian/v3/log"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +18,7 @@ func PatchEntryURLDB(db *gorm.DB, id int, url string) error {
 	}).Error
 }
 
-func PatchEntryURL(db *gorm.DB) gin.HandlerFunc {
+func PatchEntryURL(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id10, err := convert.FromSixFour(c.Param("id"))
@@ -41,6 +44,11 @@ func PatchEntryURL(db *gorm.DB) gin.HandlerFunc {
 
 		if err := PatchEntryURLDB(db, id10, json.URL); err != nil {
 			errorPatch(c, err, "Failed to patch real url on the database", 400)
+			return
+		}
+
+		if err := rdb.Set(context.TODO(), c.Param("id"), json.URL, 0).Err(); err != nil {
+			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", c.Param("id"), json.URL, err.Error())
 			return
 		}
 

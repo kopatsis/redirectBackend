@@ -3,10 +3,12 @@ package entry
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +27,7 @@ func ArchivedEntryDB(db *gorm.DB, id int) error {
 	}).Error
 }
 
-func ArchivedEntry(db *gorm.DB) gin.HandlerFunc {
+func ArchivedEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id10, err := convert.FromSixFour(c.Param("id"))
@@ -36,6 +38,11 @@ func ArchivedEntry(db *gorm.DB) gin.HandlerFunc {
 
 		if err := ArchivedEntryDB(db, id10); err != nil {
 			errorDelete(c, err, "Failed to archive on the database", 400)
+			return
+		}
+
+		if err := rdb.Del(context.TODO(), c.Param("id")).Err(); err != nil {
+			errorDelete(c, err, "Failed to archive on actual redis", 400)
 			return
 		}
 

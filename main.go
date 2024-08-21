@@ -16,6 +16,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 )
@@ -66,7 +67,19 @@ func main() {
 
 	scheduler.StartAsync()
 
-	rtr := platform.New(db, client, firebase)
+	redisAddr, redisPass := os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD")
+	if redisAddr == "" || redisPass == "" {
+		log.Fatalf("cannot connect to redis as no addr and/or pass present in env")
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Username: "default",
+		Password: redisPass,
+		DB:       0,
+	})
+
+	rtr := platform.New(db, client, firebase, rdb)
 
 	port := os.Getenv("PORT")
 	if port == "" {

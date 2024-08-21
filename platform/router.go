@@ -9,21 +9,22 @@ import (
 	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App) *gin.Engine {
+func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
 
 	router.POST("/user", user.PostUser(client))
-	router.POST("/entry", entry.PostEntry(db))
+	router.POST("/entry", entry.PostEntry(db, rdb))
 	router.POST("/merge", user.MergeUser(db, firebase))
 
-	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db))
-	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db))
-	router.PATCH("/entry/:id", entry.PatchEntryURL(db))
+	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, rdb))
+	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, rdb))
+	router.PATCH("/entry/:id", entry.PatchEntryURL(db, rdb))
 
 	router.GET("/entries", entries.GetEntries(db))
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase))

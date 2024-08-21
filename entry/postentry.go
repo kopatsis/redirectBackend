@@ -3,10 +3,13 @@ package entry
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"context"
 	"fmt"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"github.com/google/martian/v3/log"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +29,7 @@ func PostEntryDB(db *gorm.DB, entry *datatypes.Entry) (int, error) {
 	return entry.ID, nil
 }
 
-func PostEntry(db *gorm.DB) gin.HandlerFunc {
+func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var entry datatypes.Entry
 
@@ -51,6 +54,11 @@ func PostEntry(db *gorm.DB) gin.HandlerFunc {
 		sixFour, err := convert.ToSixFour(id)
 		if err != nil {
 			errorPost(c, err, "Serious issue: int does not work for six four conversion")
+			return
+		}
+
+		if err := rdb.Set(context.TODO(), sixFour, entry.RealURL, 0).Err(); err != nil {
+			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", sixFour, entry.RealURL, err.Error())
 			return
 		}
 
