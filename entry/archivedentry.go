@@ -41,7 +41,7 @@ func ArchivedEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		if err := rdb.Del(context.TODO(), c.Param("id")).Err(); err != nil {
+		if err := rdb.Del(context.Background(), c.Param("id")).Err(); err != nil {
 			errorDelete(c, err, "Failed to archive on actual redis", 400)
 			return
 		}

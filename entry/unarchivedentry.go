@@ -47,7 +47,7 @@ func UnarchivedEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		if err := rdb.Set(context.TODO(), c.Param("id"), url, 0).Err(); err != nil {
+		if err := rdb.Set(context.Background(), c.Param("id"), url, 0).Err(); err != nil {
 			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", c.Param("id"), url, err.Error())
 			return
 		}

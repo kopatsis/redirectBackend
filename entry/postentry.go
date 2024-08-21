@@ -57,7 +57,7 @@ func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		if err := rdb.Set(context.TODO(), sixFour, entry.RealURL, 0).Err(); err != nil {
+		if err := rdb.Set(context.Background(), sixFour, entry.RealURL, 0).Err(); err != nil {
 			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", sixFour, entry.RealURL, err.Error())
 			return
 		}
