@@ -52,6 +52,8 @@ func PatchEntryURL(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		c.Status(204)
+		c.JSON(200, gin.H{
+			"url": json.URL,
+		})
 	}
 }
