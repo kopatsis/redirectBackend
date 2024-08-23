@@ -308,12 +308,14 @@ func GetClicksByParam(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
 		if paying {
 			data := ProcessClicksPaid(allClicks, c.Param("id"), realURL, userid)
 			c.JSON(200, gin.H{
-				"data": data,
+				"data":  data,
+				"class": "paid",
 			})
 		} else {
 			data := ProcessClicksFree(allClicks, c.Param("id"), realURL, userid)
 			c.JSON(200, gin.H{
-				"data": data,
+				"data":  data,
+				"class": "free",
 			})
 		}
 
