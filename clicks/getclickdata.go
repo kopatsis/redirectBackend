@@ -273,21 +273,21 @@ func GetClicksByParam(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
 
 		startTimer := time.Now()
 
-		userid, inFirebase, err := user.GetUserID(c)
+		userid, _, err := user.GetUserID(c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
 		}
 
 		paying := false
-		if inFirebase {
-			isPaying, isValid := user.CheckTokenAndPaymentStatus(firebase, c)
-			if !isValid {
-				errorGet(c, err, "not a valid firebase token")
-				return
-			}
-			paying = isPaying
-		}
+		// if inFirebase {
+		// 	isPaying, isValid := user.CheckTokenAndPaymentStatus(firebase, c)
+		// 	if !isValid {
+		// 		errorGet(c, err, "not a valid firebase token")
+		// 		return
+		// 	}
+		// 	paying = isPaying
+		// }
 
 		id10, err := convert.FromSixFour(c.Param("id"))
 		if err != nil {
