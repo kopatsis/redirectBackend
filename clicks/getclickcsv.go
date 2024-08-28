@@ -7,6 +7,7 @@ import (
 	"c361main/user"
 	"encoding/csv"
 	"errors"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -82,7 +83,7 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 	c.Writer.Write(buffer.Bytes())
 }
 
-func GetClickCSV(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
+func GetClickCSV(db *gorm.DB, firebase *firebase.App, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		startTimer := time.Now()
@@ -95,12 +96,11 @@ func GetClickCSV(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
 
 		paying := false
 		if inFirebase {
-			isPaying, isValid := user.CheckTokenAndPaymentStatus(firebase, c)
-			if !isValid {
-				errorGet(c, err, "not a valid firebase token")
+			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			if err != nil {
+				errorGet(c, err, "failed to correctly check status of user payment")
 				return
 			}
-			paying = isPaying
 		}
 
 		if !paying {

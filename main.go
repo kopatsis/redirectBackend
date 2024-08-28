@@ -79,7 +79,11 @@ func main() {
 		DB:       0,
 	})
 
-	rtr := platform.New(db, client, firebase, rdb)
+	var httpClient = &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	rtr := platform.New(db, client, firebase, rdb, httpClient)
 
 	port := os.Getenv("PORT")
 	if port == "" {

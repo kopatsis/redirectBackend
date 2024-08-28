@@ -1,35 +1,51 @@
 package user
 
 import (
-	"context"
-	"strings"
-
-	firebase "firebase.google.com/go/v4"
-	"github.com/gin-gonic/gin"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
 )
 
-func CheckTokenAndPaymentStatus(app *firebase.App, c *gin.Context) (bool, bool) {
-	authClient, err := app.Auth(context.Background())
+func CheckPaymentStatus(userid string, httpClient *http.Client) (bool, error) {
+	checkURL := os.Getenv("PAY_API_URL")
+	if checkURL == "" {
+		checkURL = "https://pay.shortentrack.com"
+	}
+
+	url := fmt.Sprintf("%s/check/%s", checkURL, userid)
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return false, false
+		return false, err
 	}
 
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return false, false
+	passcode := os.Getenv("CHECK_PASSCODE")
+	if passcode == "" {
+		return false, errors.New("missing passcode")
 	}
+	req.Header.Set("X-Passcode-ID", passcode)
 
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	token, err := authClient.VerifyIDToken(context.Background(), tokenString)
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		return false, false
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 400 || resp.StatusCode == 500 {
+		return false, errors.New("server error")
 	}
 
-	isPaying, ok := token.Claims["isPaying"].(bool)
-	if !ok {
-		isPaying = false
+	var result struct {
+		ID     string `json:"id"`
+		Paying bool   `json:"paying"`
 	}
 
-	return isPaying, true
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return false, err
+	}
+
+	return result.Paying, nil
 }

@@ -5,6 +5,7 @@ import (
 	"c361main/entries"
 	"c361main/entry"
 	"c361main/user"
+	"net/http"
 
 	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
@@ -13,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client) *gin.Engine {
+func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
@@ -27,8 +28,8 @@ func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *red
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db, rdb))
 
 	router.GET("/entries", entries.GetEntries(db))
-	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase))
-	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase))
+	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))
+	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
 
 	return router
 

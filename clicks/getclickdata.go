@@ -5,6 +5,7 @@ import (
 	"c361main/datatypes"
 	"c361main/user"
 	"fmt"
+	"net/http"
 	"sort"
 	"time"
 
@@ -268,26 +269,25 @@ func ProcessClicksFree(clicks []datatypes.Click, param, realURL, userID string) 
 	return ret
 }
 
-func GetClicksByParam(db *gorm.DB, firebase *firebase.App) gin.HandlerFunc {
+func GetClicksByParam(db *gorm.DB, firebase *firebase.App, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		startTimer := time.Now()
 
-		userid, _, err := user.GetUserID(c)
+		userid, inFirebase, err := user.GetUserID(c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
 		}
 
 		paying := false
-		// if inFirebase {
-		// 	isPaying, isValid := user.CheckTokenAndPaymentStatus(firebase, c)
-		// 	if !isValid {
-		// 		errorGet(c, err, "not a valid firebase token")
-		// 		return
-		// 	}
-		// 	paying = isPaying
-		// }
+		if inFirebase {
+			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			if err != nil {
+				errorGet(c, err, "failed to correctly check status of user payment")
+				return
+			}
+		}
 
 		id10, err := convert.FromSixFour(c.Param("id"))
 		if err != nil {
