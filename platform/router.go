@@ -33,8 +33,8 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 
 	router.GET("/haspassword", user.HasPasswordHandler(firebase))
 
-	router.POST("/emailexchange", nil)
-	router.GET("/emailexchange", nil)
+	router.POST("/emailexchange", user.AddExchange(bdb))
+	router.GET("/emailexchange/:id", user.GetExchange(bdb))
 
 	return router
 

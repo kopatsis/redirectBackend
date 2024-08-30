@@ -26,7 +26,7 @@ func PostUser() gin.HandlerFunc {
 }
 
 func UserCookie(c *gin.Context) string {
-	newUUID := "_" + uuid.New().String()
+	newUUID := uuid.New().String()
 
 	c.SetCookie("useruuid", newUUID, 2147483647, "/", ".shortentrack.com", false, false)
 
