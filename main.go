@@ -22,20 +22,12 @@ import (
 	"google.golang.org/api/option"
 )
 
-const projectID = "cs361a"
-
 func main() {
 
 	if err := godotenv.Load(); err != nil {
 		if os.Getenv("APP_ENV") != "production" {
 			log.Fatalf("Failed to load the env vars: %v", err)
 		}
-	}
-
-	ctx := context.Background()
-	client, err := datastore.NewClient(ctx, projectID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
 	}
 
 	db, err := database.Connect()
@@ -91,7 +83,7 @@ func main() {
 	}
 	defer bdb.Close()
 
-	rtr := platform.New(db, client, firebase, rdb, httpClient, bdb)
+	rtr := platform.New(db, firebase, rdb, httpClient, bdb)
 
 	port := os.Getenv("PORT")
 	if port == "" {

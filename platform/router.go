@@ -7,7 +7,6 @@ import (
 	"c361main/user"
 	"net/http"
 
-	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/gin-gonic/gin"
@@ -15,12 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client, bdb *badger.DB) *gin.Engine {
+func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client, bdb *badger.DB) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
 
-	router.POST("/user", user.PostUser(client))
+	router.POST("/user", user.PostUser())
 	router.POST("/entry", entry.PostEntry(db, rdb))
 	router.POST("/merge", user.MergeUser(db, firebase))
 

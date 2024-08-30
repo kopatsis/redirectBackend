@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
@@ -31,7 +32,7 @@ func GetSubFromJWT(app *firebase.App, c *gin.Context) (string, error, bool) {
 
 func GetUserID(app *firebase.App, c *gin.Context) (string, bool, error) {
 	firebaseID, fireFrr, empty := GetSubFromJWT(app, c)
-	localid, localErr := c.Cookie("userKey")
+	localid, localErr := getLocalIDTwo(c)
 
 	if firebaseID != "" && fireFrr == nil {
 		return firebaseID, true, nil
@@ -50,8 +51,8 @@ func GetUserID(app *firebase.App, c *gin.Context) (string, bool, error) {
 }
 
 func GetBothIDs(app *firebase.App, c *gin.Context) (string, string, error) {
-	localid, err := c.Cookie("userKey")
-	if localid == "" || err != nil {
+	localid, err := getLocalIDTwo(c)
+	if err != nil {
 		return "", "", err
 	}
 
@@ -73,4 +74,16 @@ func GetBothIDs(app *firebase.App, c *gin.Context) (string, string, error) {
 	}
 
 	return token.UID, localid, nil
+}
+
+func getLocalIDTwo(c *gin.Context) (string, error) {
+	localid, err := c.Cookie("useruuid")
+	if localid == "" || err != nil {
+		headerid := c.GetHeader("X-User-ID")
+		if headerid == "" {
+			return "", errors.New("no user id in either cookie or header")
+		}
+		return headerid, nil
+	}
+	return localid, nil
 }

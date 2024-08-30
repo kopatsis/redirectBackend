@@ -1,13 +1,10 @@
 package user
 
 import (
-	"c361main/datatypes"
 	"fmt"
-	"strconv"
-	"time"
 
-	"cloud.google.com/go/datastore"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func errorPost(c *gin.Context, err error, reason string) {
@@ -18,20 +15,28 @@ func errorPost(c *gin.Context, err error, reason string) {
 	})
 }
 
-func PostUser(client *datastore.Client) gin.HandlerFunc {
+func PostUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user datatypes.User
-		user.Date = time.Now()
-
-		key := datastore.IncompleteKey("User", nil)
-		newkey, err := client.Put(c, key, &user)
-		if err != nil {
-			errorPost(c, err, "Failed to post user")
-			return
-		}
+		cookie := GetUserCookie(c)
 
 		c.JSON(201, gin.H{
-			"key": "DS-" + strconv.FormatInt(newkey.ID, 10),
+			"key": cookie,
 		})
 	}
+}
+
+func UserCookie(c *gin.Context) string {
+	newUUID := "_" + uuid.New().String()
+
+	c.SetCookie("useruuid", newUUID, 2147483647, "/", ".shortentrack.com", false, false)
+
+	return newUUID
+}
+
+func GetUserCookie(c *gin.Context) string {
+	userUUID, err := c.Cookie("useruuid")
+	if err != nil {
+		return UserCookie(c)
+	}
+	return userUUID
 }

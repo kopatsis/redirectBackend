@@ -88,7 +88,7 @@ func GetClickCSV(db *gorm.DB, firebase *firebase.App, httpClient *http.Client) g
 
 		startTimer := time.Now()
 
-		userid, inFirebase, err := user.GetUserID(c)
+		userid, inFirebase, err := user.GetUserID(firebase, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
