@@ -9,12 +9,13 @@ import (
 
 	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
+func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client, bdb *badger.DB) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
@@ -32,6 +33,9 @@ func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *red
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
 
 	router.GET("/haspassword", user.HasPasswordHandler(firebase))
+
+	router.POST("/emailexchange", nil)
+	router.GET("/emailexchange", nil)
 
 	return router
 

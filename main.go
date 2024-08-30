@@ -14,6 +14,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8"
@@ -83,7 +84,14 @@ func main() {
 		Timeout: 10 * time.Second,
 	}
 
-	rtr := platform.New(db, client, firebase, rdb, httpClient)
+	opts := badger.DefaultOptions("./badgerdb")
+	bdb, err := badger.Open(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer bdb.Close()
+
+	rtr := platform.New(db, client, firebase, rdb, httpClient, bdb)
 
 	port := os.Getenv("PORT")
 	if port == "" {
