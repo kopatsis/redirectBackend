@@ -6,6 +6,7 @@ import (
 	"c361main/user"
 	"fmt"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -45,9 +46,9 @@ func GetEntriesDB(db *gorm.DB, user string) ([]datatypes.ShortenedEntry, error) 
 	return shortenedEntries, nil
 }
 
-func GetEntries(db *gorm.DB) gin.HandlerFunc {
+func GetEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userid, _, err := user.GetUserID(c)
+		userid, _, err := user.GetUserID(app, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return

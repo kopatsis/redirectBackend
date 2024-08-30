@@ -6,42 +6,31 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-func GetSubFromJWT(c *gin.Context) (string, error, bool) {
+func GetSubFromJWT(app *firebase.App, c *gin.Context) (string, error, bool) {
+	authClient, err := app.Auth(context.Background())
+	if err != nil {
+		return "", nil, true
+	}
+
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		return "", jwt.ErrInvalidType, true
+		return "", nil, true
 	}
 
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return "", jwt.ErrInvalidType, true
-	}
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	tokenString := parts[1]
-
-	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	token, err := authClient.VerifyIDToken(context.Background(), tokenString)
 	if err != nil {
 		return "", err, false
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return "", jwt.ErrInvalidKey, false
-	}
-
-	sub, ok := claims["sub"].(string)
-	if !ok {
-		return "", jwt.ErrInvalidKey, false
-	}
-
-	return sub, nil, false
+	return token.UID, nil, false
 }
 
-func GetUserID(c *gin.Context) (string, bool, error) {
-	firebaseID, fireFrr, empty := GetSubFromJWT(c)
+func GetUserID(app *firebase.App, c *gin.Context) (string, bool, error) {
+	firebaseID, fireFrr, empty := GetSubFromJWT(app, c)
 	localid, localErr := c.Cookie("userKey")
 
 	if firebaseID != "" && fireFrr == nil {

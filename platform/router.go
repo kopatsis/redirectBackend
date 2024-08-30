@@ -27,9 +27,11 @@ func New(db *gorm.DB, client *datastore.Client, firebase *firebase.App, rdb *red
 	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, rdb))
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db, rdb))
 
-	router.GET("/entries", entries.GetEntries(db))
+	router.GET("/entries", entries.GetEntries(firebase, db))
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
+
+	router.GET("/haspassword", user.HasPasswordHandler(firebase))
 
 	return router
 
