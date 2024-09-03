@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const BATCH = 25
+
 type Entry struct {
 	ID           int       `gorm:"primaryKey" json:"-"`
 	User         string    `json:"user"`

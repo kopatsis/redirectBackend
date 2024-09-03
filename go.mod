@@ -9,6 +9,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/martian/v3 v3.3.2
 	github.com/joho/godotenv v1.5.1
+	github.com/lithammer/fuzzysearch v1.1.8
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.11
 )

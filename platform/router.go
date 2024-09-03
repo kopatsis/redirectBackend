@@ -27,6 +27,8 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db, rdb))
 
 	router.GET("/entries", entries.GetEntries(firebase, db))
+	router.GET("/search", entries.QueryEntries(firebase, db))
+
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
 
