@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.ShortenedEntry, error) {
+func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.ShortenedEntry, int, error) {
 	var entries []datatypes.Entry
 	var shortenedEntries []datatypes.ShortenedEntry
 
@@ -36,14 +36,22 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 	}
 
 	if err := query.Find(&entries).Error; err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	if len(entries) == 0 && page > 1 {
+		page = 1
+		query = query.Offset(-1)
+		if err := query.Find(&entries).Error; err != nil {
+			return nil, 0, err
+		}
 	}
 
 	for _, entry := range entries {
 
 		param, err := convert.ToSixFour(entry.ID)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		shortenedEntry := datatypes.ShortenedEntry{
@@ -55,13 +63,13 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 		shortenedEntries = append(shortenedEntries, shortenedEntry)
 	}
 
-	return shortenedEntries, nil
+	return shortenedEntries, page, nil
 }
 
-func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]datatypes.ShortenedEntry, error) {
-	entries, err := GetQueriedDB(db, user, sort, 0)
+func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]datatypes.ShortenedEntry, int, error) {
+	entries, _, err := GetQueriedDB(db, user, sort, 0)
 	if err != nil {
-		return []datatypes.ShortenedEntry{}, err
+		return []datatypes.ShortenedEntry{}, 0, err
 	}
 
 	var filteredEntries []datatypes.ShortenedEntry
@@ -76,9 +84,14 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]da
 
 	skips := (page - 1) * datatypes.BATCH
 
-	filteredEntries = filteredEntries[min(skips, len(filteredEntries)):min(skips+datatypes.BATCH+1, len(filteredEntries))]
+	returnEntries := filteredEntries[min(skips, len(filteredEntries)):min(skips+datatypes.BATCH+1, len(filteredEntries))]
 
-	return filteredEntries, nil
+	if page > 1 && len(returnEntries) == 0 {
+		returnEntries = filteredEntries[0:min(datatypes.BATCH+1, len(filteredEntries))]
+		page = 1
+	}
+
+	return returnEntries, page, nil
 }
 
 func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
@@ -96,6 +109,9 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		search := c.DefaultQuery("q", "")
+		if len(search) > 128 {
+			search = search[0:127]
+		}
 
 		sort := c.DefaultQuery("s", "dd")
 		if sort != "aa" && sort != "ad" && sort != "da" && sort != "dd" {
@@ -105,14 +121,14 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		var filteredEntries []datatypes.ShortenedEntry
 
 		if search != "" {
-			filteredEntries, err = SearchFilterEntries(db, userid, search, sort, page)
+			filteredEntries, page, err = SearchFilterEntries(db, userid, search, sort, page)
 			if err != nil {
 				errorGet(c, err, "failed to query actual entries")
 				return
 			}
 
 		} else {
-			filteredEntries, err = GetQueriedDB(db, userid, sort, page)
+			filteredEntries, page, err = GetQueriedDB(db, userid, sort, page)
 			if err != nil {
 				errorGet(c, err, "failed to query actual entries")
 				return
@@ -129,6 +145,9 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 			"entries": &filteredEntries,
 			"more":    more,
 			"less":    page > 1,
+			"page":    page,
+			"search":  search,
+			"sort":    sort,
 		})
 
 	}
