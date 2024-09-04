@@ -23,6 +23,14 @@ type ShortenedEntry struct {
 	Date    time.Time `json:"date"`
 }
 
+type LengthenedEntry struct {
+	Param   string    `json:"param"`
+	User    string    `json:"user"`
+	RealURL string    `json:"url"`
+	Date    time.Time `json:"date"`
+	Count   int64     `json:"count"`
+}
+
 func (entry *Entry) InitalizeFormat() {
 	entry.Date = time.Now()
 	entry.Archived = false
