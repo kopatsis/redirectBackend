@@ -47,7 +47,7 @@ func CheckCustomHandle(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 
 		handle := c.Param("id")
 
-		if len(handle) < 6 || len(handle) > 256 {
+		if len(handle) < 7 || len(handle) > 256 {
 			errorPatch(c, errors.New("wrong size for new handle"), "Invalid or missing JSON input", 400)
 			return
 		}
@@ -105,7 +105,7 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 			return
 		}
 
-		if len(json.Handle) < 6 || len(json.Handle) > 256 {
+		if len(json.Handle) < 7 || len(json.Handle) > 256 {
 			errorPatch(c, errors.New("wrong size for new handle"), "Invalid or missing JSON input", 400)
 			return
 		}
