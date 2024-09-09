@@ -26,11 +26,12 @@ type ShortenedEntry struct {
 }
 
 type LengthenedEntry struct {
-	Param   string    `json:"param"`
-	User    string    `json:"user"`
-	RealURL string    `json:"url"`
-	Date    time.Time `json:"date"`
-	Count   int64     `json:"count"`
+	Param        string    `json:"param"`
+	User         string    `json:"user"`
+	RealURL      string    `json:"url"`
+	Date         time.Time `json:"date"`
+	Count        int       `json:"count"`
+	CustomHandle string    `json:"custom"`
 }
 
 func (entry *Entry) InitalizeFormat() {

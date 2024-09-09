@@ -17,30 +17,30 @@ import (
 	"gorm.io/gorm"
 )
 
-type ClickCount struct {
-	ParamKey int
-	Count    int64
-}
+// type ClickCount struct {
+// 	ParamKey int
+// 	Count    int64
+// }
 
-func countClicksByParamKey(db *gorm.DB, entries []datatypes.Entry) ([]ClickCount, error) {
+// func countClicksByParamKey(db *gorm.DB, entries []datatypes.Entry) ([]ClickCount, error) {
 
-	var paramKeys []int
-	for _, ent := range entries {
-		paramKeys = append(paramKeys, ent.ID)
-	}
+// 	var paramKeys []int
+// 	for _, ent := range entries {
+// 		paramKeys = append(paramKeys, ent.ID)
+// 	}
 
-	var result []ClickCount
+// 	var result []ClickCount
 
-	err := db.Model(&datatypes.Click{}).
-		Select("param_key, COUNT(*) as count").
-		Where("param_key IN ?", paramKeys).
-		Group("param_key").
-		Find(&result).Error
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
+// 	err := db.Model(&datatypes.Click{}).
+// 		Select("param_key, COUNT(*) as count").
+// 		Where("param_key IN ?", paramKeys).
+// 		Group("param_key").
+// 		Find(&result).Error
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return result, nil
+// }
 
 func GetEntriesRaw(db *gorm.DB, user string) ([]datatypes.Entry, error) {
 	var entries []datatypes.Entry
@@ -51,12 +51,7 @@ func GetEntriesRaw(db *gorm.DB, user string) ([]datatypes.Entry, error) {
 	return entries, nil
 }
 
-func createLengthed(entries []datatypes.Entry, counts []ClickCount) ([]datatypes.LengthenedEntry, error) {
-	clickMap := map[int]int64{}
-	for _, ct := range counts {
-		clickMap[ct.ParamKey] = ct.Count
-	}
-
+func createLengthed(entries []datatypes.Entry) ([]datatypes.LengthenedEntry, error) {
 	ret := []datatypes.LengthenedEntry{}
 
 	for _, ent := range entries {
@@ -65,17 +60,13 @@ func createLengthed(entries []datatypes.Entry, counts []ClickCount) ([]datatypes
 			return nil, err
 		}
 
-		var count int64
-		if val, ok := clickMap[ent.ID]; ok {
-			count = val
-		}
-
 		current := datatypes.LengthenedEntry{
-			Param:   param,
-			User:    ent.User,
-			RealURL: ent.RealURL,
-			Date:    ent.Date,
-			Count:   count,
+			Param:        param,
+			User:         ent.User,
+			RealURL:      ent.RealURL,
+			Date:         ent.Date,
+			Count:        ent.Count,
+			CustomHandle: ent.CustomHandle,
 		}
 		ret = append(ret, current)
 	}
@@ -89,7 +80,7 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.LengthenedEntry) {
 
 	shortDomain := os.Getenv("SHORT_DOMAIN")
 	headers := []string{
-		"Shortened URL", "Date Created", "Real URL", "Click Count",
+		"Shortened URL", "Date Created", "Real URL", "Click Count", "Custom Shortened URL",
 	}
 	writer.Write(headers)
 
@@ -98,7 +89,8 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.LengthenedEntry) {
 			shortDomain + "/" + ent.Param,
 			ent.Date.Format(time.RFC3339),
 			ent.RealURL,
-			strconv.FormatInt(ent.Count, 10),
+			strconv.Itoa(ent.Count),
+			shortDomain + "/" + ent.CustomHandle,
 		}
 
 		writer.Write(record)
@@ -143,13 +135,7 @@ func GetEntriesCSV(db *gorm.DB, firebase *firebase.App, httpClient *http.Client)
 			return
 		}
 
-		counts, err := countClicksByParamKey(db, entries)
-		if err != nil {
-			errorGet(c, err, "unable to query click counts")
-			return
-		}
-
-		ret, err := createLengthed(entries, counts)
+		ret, err := createLengthed(entries)
 		if err != nil {
 			errorGet(c, err, "unable to convert to lengthed entry structs")
 			return
