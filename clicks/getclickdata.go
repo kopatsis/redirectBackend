@@ -31,7 +31,7 @@ func errorGet(c *gin.Context, err error, reason string) {
 func GetClicksDB(db *gorm.DB, paramkey int, user string) (datatypes.Entry, []datatypes.Click, error, bool) {
 	var entry datatypes.Entry
 
-	err := db.Where("id = ? AND user = ?", paramkey, user).First(&entry).Error
+	err := db.Where("id = ? AND user = ? AND archived = ?", paramkey, user, false).First(&entry).Error
 	if err != nil {
 		return entry, nil, err, true
 	}

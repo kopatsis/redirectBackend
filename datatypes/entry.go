@@ -19,19 +19,21 @@ type Entry struct {
 }
 
 type ShortenedEntry struct {
-	Param   string    `json:"param"`
-	User    string    `json:"user"`
-	RealURL string    `json:"url"`
-	Date    time.Time `json:"date"`
-}
-
-type LengthenedEntry struct {
 	Param        string    `json:"param"`
 	User         string    `json:"user"`
 	RealURL      string    `json:"url"`
 	Date         time.Time `json:"date"`
 	Count        int       `json:"count"`
 	CustomHandle string    `json:"custom"`
+}
+
+type EntryList struct {
+	FilteredEntries []ShortenedEntry `json:"entries"`
+	More            bool             `json:"more"`
+	Less            bool             `json:"less"`
+	Page            int              `json:"page"`
+	Search          string           `json:"search"`
+	Sort            string           `json:"sort"`
 }
 
 func (entry *Entry) InitalizeFormat() {

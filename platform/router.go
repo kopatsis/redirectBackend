@@ -29,8 +29,10 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, firebase, rdb, httpClient))
 	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, firebase, rdb, httpClient))
 
-	router.GET("/entries", entries.GetEntries(firebase, db))
+	// router.GET("/entries", entries.GetEntries(firebase, db))
+
 	router.GET("/search", entries.QueryEntries(firebase, db))
+	router.GET("/search/:id", entries.QueryEntriesWithSingle(firebase, db))
 	router.GET("/entriescsv", entries.GetEntriesCSV(db, firebase, httpClient))
 
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))

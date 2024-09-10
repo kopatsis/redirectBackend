@@ -51,8 +51,8 @@ func GetEntriesRaw(db *gorm.DB, user string) ([]datatypes.Entry, error) {
 	return entries, nil
 }
 
-func createLengthed(entries []datatypes.Entry) ([]datatypes.LengthenedEntry, error) {
-	ret := []datatypes.LengthenedEntry{}
+func createLengthed(entries []datatypes.Entry) ([]datatypes.ShortenedEntry, error) {
+	ret := []datatypes.ShortenedEntry{}
 
 	for _, ent := range entries {
 		param, err := convert.ToSixFour(ent.ID)
@@ -60,7 +60,7 @@ func createLengthed(entries []datatypes.Entry) ([]datatypes.LengthenedEntry, err
 			return nil, err
 		}
 
-		current := datatypes.LengthenedEntry{
+		current := datatypes.ShortenedEntry{
 			Param:        param,
 			User:         ent.User,
 			RealURL:      ent.RealURL,
@@ -74,7 +74,7 @@ func createLengthed(entries []datatypes.Entry) ([]datatypes.LengthenedEntry, err
 	return ret, nil
 }
 
-func ServeEntriesCSV(c *gin.Context, entries []datatypes.LengthenedEntry) {
+func ServeEntriesCSV(c *gin.Context, entries []datatypes.ShortenedEntry) {
 	var buffer bytes.Buffer
 	writer := csv.NewWriter(&buffer)
 
