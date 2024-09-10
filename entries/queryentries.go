@@ -146,7 +146,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"entries": &filteredEntries,
+			"entries": filteredEntries,
 			"more":    more,
 			"less":    page > 1,
 			"page":    page,

@@ -61,7 +61,7 @@ func GetEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(200, gin.H{
-			"entries": &entries,
+			"entries": entries,
 		})
 	}
 }
