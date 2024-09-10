@@ -5,6 +5,7 @@ import (
 	"c361main/datatypes"
 	"c361main/user"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"time"
@@ -27,24 +28,21 @@ func errorGet(c *gin.Context, err error, reason string) {
 	})
 }
 
-func GetClicksDB(db *gorm.DB, paramkey int, user string) ([]datatypes.Click, string, error, bool) {
-	var entry struct {
-		ID      int
-		RealURL string
-	}
+func GetClicksDB(db *gorm.DB, paramkey int, user string) (datatypes.Entry, []datatypes.Click, error, bool) {
+	var entry datatypes.Entry
 
-	err := db.Model(&datatypes.Entry{}).Where("id = ? AND user = ?", paramkey, user).Select("id, real_url").First(&entry).Error
+	err := db.Where("id = ? AND user = ?", paramkey, user).First(&entry).Error
 	if err != nil {
-		return nil, "", err, true
+		return entry, nil, err, true
 	}
 
 	var clicks []datatypes.Click
 	err = db.Where("param_key = ?", paramkey).Find(&clicks).Error
 	if err != nil {
-		return nil, "", err, false
+		return entry, nil, err, false
 	}
 
-	return clicks, entry.RealURL, nil, false
+	return entry, clicks, nil, false
 }
 
 func WeeklyDateFixer(click, start time.Time) (time.Time, bool) {
@@ -137,10 +135,10 @@ func ProcessMaxGraph(strMap map[string]int, max int) datatypes.StringGraph {
 	return graph
 }
 
-func ProcessClicksPaid(clicks []datatypes.Click, param, realURL, userID string) datatypes.ClickDataPaid {
+func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.Entry, userID string) datatypes.ClickDataPaid {
 	ret := datatypes.ClickDataPaid{
 		Param:   param,
-		RealURL: realURL,
+		RealURL: entry.RealURL,
 		User:    userID,
 	}
 
@@ -209,6 +207,10 @@ func ProcessClicksPaid(clicks []datatypes.Click, param, realURL, userID string) 
 		ipSet[click.IPAddress] = true
 	}
 
+	if total != entry.Count {
+		log.Printf("Count and total NOT equal -- count: %d, total: %d, param: %s\n", entry.Count, total, param)
+	}
+
 	ret.DailyGraph = ProcessDailyGraph(dailyMap, startTime)
 	ret.WeeklyGraph = ProcessWeeklyGraph(weeklyMap, startTime)
 
@@ -227,11 +229,11 @@ func ProcessClicksPaid(clicks []datatypes.Click, param, realURL, userID string) 
 	return ret
 }
 
-func ProcessClicksFree(clicks []datatypes.Click, param, realURL, userID string) datatypes.ClickDataFree {
+func ProcessClicksFree(clicks []datatypes.Click, param string, entry datatypes.Entry, userID string) datatypes.ClickDataFree {
 
 	ret := datatypes.ClickDataFree{
 		Param:   param,
-		RealURL: realURL,
+		RealURL: entry.RealURL,
 		User:    userID,
 	}
 
@@ -295,7 +297,7 @@ func GetClicksByParam(db *gorm.DB, firebase *firebase.App, httpClient *http.Clie
 			return
 		}
 
-		allClicks, realURL, err, userIssue := GetClicksDB(db, id10, userid)
+		entry, allClicks, err, userIssue := GetClicksDB(db, id10, userid)
 		if err != nil {
 			if userIssue {
 				errorGet(c, err, "Failed to get entry that matches ID and user for clicks from DB")
@@ -306,13 +308,13 @@ func GetClicksByParam(db *gorm.DB, firebase *firebase.App, httpClient *http.Clie
 		}
 
 		if paying {
-			data := ProcessClicksPaid(allClicks, c.Param("id"), realURL, userid)
+			data := ProcessClicksPaid(allClicks, c.Param("id"), entry, userid)
 			c.JSON(200, gin.H{
 				"data":  data,
 				"class": "paid",
 			})
 		} else {
-			data := ProcessClicksFree(allClicks, c.Param("id"), realURL, userid)
+			data := ProcessClicksFree(allClicks, c.Param("id"), entry, userid)
 			c.JSON(200, gin.H{
 				"data":  data,
 				"class": "free",
