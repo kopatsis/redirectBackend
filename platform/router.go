@@ -22,9 +22,9 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.POST("/entry", entry.PostEntry(db, rdb))
 	router.POST("/merge", user.MergeUser(db, firebase))
 
-	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, rdb))
-	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, rdb))
-	router.PATCH("/entry/:id", entry.PatchEntryURL(db, rdb))
+	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, firebase, rdb))
+	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, firebase, rdb))
+	router.PATCH("/entry/:id", entry.PatchEntryURL(db, firebase, rdb))
 
 	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, firebase, rdb, httpClient))
 	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, firebase, rdb, httpClient))

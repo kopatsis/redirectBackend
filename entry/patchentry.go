@@ -3,9 +3,12 @@ package entry
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/user"
 	"context"
+	"errors"
 	"net/url"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/martian/v3/log"
@@ -18,12 +21,28 @@ func PatchEntryURLDB(db *gorm.DB, id int, url string) error {
 	}).Error
 }
 
-func PatchEntryURL(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
+func PatchEntryURL(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		userid, _, err := user.GetUserID(app, c)
+		if err != nil {
+			errorPatch(c, err, "Failed to get user id", 400)
+			return
+		}
 
 		id10, err := convert.FromSixFour(c.Param("id"))
 		if err != nil {
 			errorPatch(c, err, "Failed to convert id param", 400)
+			return
+		}
+
+		var entry datatypes.Entry
+		err = db.First(&entry, id10).Error
+		if err != nil {
+			errorDelete(c, err, "Failed to retrieve entry", 400)
+			return
+		} else if entry.User != userid {
+			errorPatch(c, errors.New("unauthorized for current entry"), "Wrong user for current entry", 400)
 			return
 		}
 
