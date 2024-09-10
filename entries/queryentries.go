@@ -26,6 +26,10 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 		query = query.Order("real_url DESC")
 	case "da":
 		query = query.Order("date ASC")
+	case "ca":
+		query = query.Order("count ASC")
+	case "cd":
+		query = query.Order("count DESC")
 	default:
 		query = query.Order("date DESC")
 	}
@@ -114,7 +118,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		sort := c.DefaultQuery("s", "dd")
-		if sort != "aa" && sort != "ad" && sort != "da" && sort != "dd" {
+		if sort != "aa" && sort != "ad" && sort != "da" && sort != "dd" && sort != "ca" && sort != "cd" {
 			sort = "dd"
 		}
 
