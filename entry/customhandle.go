@@ -42,7 +42,7 @@ func GetEntryByID(db *gorm.DB, id int) (*datatypes.Entry, error) {
 	return &entry, nil
 }
 
-func CheckCustomHandle(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
+func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		handle := c.Param("id")
@@ -58,6 +58,12 @@ func CheckCustomHandle(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
+		userid, _, err := user.GetUserID(app, c)
+		if err != nil {
+			errorPatch(c, err, "failed to get jwt or header user id", 400)
+			return
+		}
+
 		if c.GetHeader("X-Passcode-ID") != os.Getenv("CHECK_PASSCODE") {
 			errorPatch(c, errors.New("no or wrong passcode id attacked"), "Invalid or missing passcode", 400)
 			return
@@ -69,14 +75,14 @@ func CheckCustomHandle(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		count, err := rdb.Exists(context.Background(), handle).Result()
-		if err != nil {
+		existing, err := rdb.Get(context.Background(), handle).Result()
+		if err != nil && err != redis.Nil {
 			errorPatch(c, err, "failed to check from redis if handle exists", 400)
 			return
 		}
 
 		c.JSON(200, gin.H{
-			"available": !exists && count == 0,
+			"available": !exists && (existing == "" || existing == ":e:"+userid),
 		})
 	}
 }
@@ -141,12 +147,12 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 			return
 		}
 
-		count, err := rdb.Exists(context.Background(), json.Handle).Result()
-		if err != nil {
+		existing, err := rdb.Get(context.Background(), json.Handle).Result()
+		if err != nil && err != redis.Nil {
 			errorPatch(c, err, "failed to check from redis if handle exists", 400)
 			return
-		} else if count > 0 {
-			errorPatch(c, err, "exists in redis already", 400)
+		} else if existing != "" && existing != ":e:"+userid {
+			errorPatch(c, errors.New("not allowed to use hanlde"), "handle already exists and is not :e: + userid", 400)
 			return
 		}
 
@@ -158,6 +164,13 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 		if err := rdb.Set(context.Background(), json.Handle, entry.RealURL, 0).Err(); err != nil {
 			errorPatch(c, err, "could not save to redis", 400)
 			return
+		}
+
+		if entry.CustomHandle != "" {
+			if err := rdb.Set(context.Background(), entry.CustomHandle, ":e:"+userid, 0).Err(); err != nil {
+				errorPatch(c, err, "could not save old handle to redis", 400)
+				return
+			}
 		}
 
 	}
@@ -208,8 +221,8 @@ func DeleteCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpC
 			return
 		}
 
-		if err := rdb.Del(context.Background(), entry.CustomHandle).Err(); err != nil {
-			errorPatch(c, err, "could not save to redis", 400)
+		if err := rdb.Set(context.Background(), entry.CustomHandle, ":e:"+userid, 0).Err(); err != nil {
+			errorPatch(c, err, "could not save old handle to redis", 400)
 			return
 		}
 	}

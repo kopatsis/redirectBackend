@@ -43,7 +43,7 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.POST("/emailexchange", user.AddExchange(rdb))
 	router.GET("/emailexchange/:id", user.GetExchange(rdb))
 
-	router.GET("/customcheck/:id", entry.CheckCustomHandle(db, rdb))
+	router.GET("/customcheck/:id", entry.CheckCustomHandle(db, firebase, rdb))
 
 	return router
 
