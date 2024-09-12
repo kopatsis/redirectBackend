@@ -8,7 +8,7 @@ import (
 const BATCH = 25
 
 type Entry struct {
-	ID           int       `gorm:"primaryKey" json:"-"`
+	ID           int       `gorm:"primaryKey;autoIncrement:false" json:"-"`
 	User         string    `gorm:"index" json:"user"`
 	RealURL      string    `json:"url"`
 	CustomHandle string    `gorm:"unique;index" json:"-"`
