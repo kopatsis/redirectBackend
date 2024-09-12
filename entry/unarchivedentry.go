@@ -23,7 +23,7 @@ func errorPatch(c *gin.Context, err error, reason string, errorCode int) {
 	})
 }
 
-func UnarchivedEntryDB(db *gorm.DB, id int) (string, error) {
+func UnarchivedEntryDB(db *gorm.DB, id int64) (string, error) {
 	var entry datatypes.Entry
 	err := db.Model(&datatypes.Entry{}).
 		Where("id = ?", id).

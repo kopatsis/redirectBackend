@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var RESERVE = []int{
+var RESERVE = []int64{
 	124092490, 886968310, 210759517, 635537027, 716492954, 714163706,
 	1022127667, 1039898767, 548615800, 873858384, 1025089867, 318172894,
 	911652002, 369912434, 562716951, 975542319, 209260992, 1048199652,
@@ -37,21 +37,29 @@ func errorPost(c *gin.Context, err error, reason string) {
 	})
 }
 
-func PostEntryDB(db *gorm.DB, entry *datatypes.Entry) (int, error) {
+func PostEntryDB(db *gorm.DB, entry *datatypes.Entry) (int64, error) {
 	if err := db.Create(entry).Error; err != nil {
 		return 0, err
 	}
 	return entry.ID, nil
 }
 
-func PostEntryFullDB(db *gorm.DB, entry *datatypes.Entry) error {
-	return db.Create(entry).Error
+func PostEntryFullDB(db *gorm.DB, entry *datatypes.Entry) (uniqueIss bool, actualErr error) {
+	err := db.Create(entry).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return true, err
+		} else {
+			return false, err
+		}
+	}
+	return false, nil
 }
 
-func GetTheNewID() (int, string, error) {
+func GetTheNewID() (int64, string, error) {
 	try := 0
 	for try < 128 {
-		attempt := rand.Intn(1073741822-64+1) + 64
+		attempt := int64(rand.Intn(convert.LIMIT-64+1) + 64)
 		st, err := convert.ToSixFour(attempt)
 		if err != nil {
 			try++
@@ -70,27 +78,46 @@ func GetTheNewID() (int, string, error) {
 }
 
 func AttemptToPost(db *gorm.DB, rdb *redis.Client, entry *datatypes.Entry) (string, error) {
-	for i := 0; i < 10; i++ {
+	try := 0
+	for try < 10 {
 		id, param, err := GetTheNewID()
 		if err != nil {
+			try++
 			continue
 		}
 
 		exists, err := rdb.Exists(context.Background(), param).Result()
 		if exists > 0 || err != nil {
+			try++
 			continue
 		}
 
 		entry.ID = id
 
-		if err := PostEntryFullDB(db, entry); err != nil {
-			continue
+		if uniqueIssue, err := PostEntryFullDB(db, entry); err != nil {
+			if uniqueIssue {
+				try += 5
+				continue
+			} else {
+				return "", err
+			}
 		}
 
 		return param, nil
 	}
 
-	return "", errors.New("unable to create")
+	newID := RESERVE[rand.Intn(20)]
+	st, err := convert.ToSixFour(newID)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := PostEntryFullDB(db, entry); err != nil {
+		return "", err
+	}
+
+	return st, nil
+
 }
 
 func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
@@ -109,15 +136,9 @@ func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		id, err := PostEntryDB(db, &entry)
+		sixFour, err := AttemptToPost(db, rdb, &entry)
 		if err != nil {
-			errorPost(c, err, "Failed to post entry to database")
-			return
-		}
-
-		sixFour, err := convert.ToSixFour(id)
-		if err != nil {
-			errorPost(c, err, "Serious issue: int does not work for six four conversion")
+			errorPost(c, err, "Could not post to db")
 			return
 		}
 

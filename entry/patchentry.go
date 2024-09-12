@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func PatchEntryURLDB(db *gorm.DB, id int, url string) error {
+func PatchEntryURLDB(db *gorm.DB, id int64, url string) error {
 	return db.Model(&datatypes.Entry{}).Where("id = ?", id).Updates(datatypes.Entry{
 		RealURL: url,
 	}).Error

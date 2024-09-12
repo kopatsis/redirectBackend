@@ -25,7 +25,7 @@ func CheckCustomHandleExists(db *gorm.DB, handle string) (bool, error) {
 	return count > 0, nil
 }
 
-func UpdateCustomHandle(db *gorm.DB, handle string, id int) error {
+func UpdateCustomHandle(db *gorm.DB, handle string, id int64) error {
 	var entry datatypes.Entry
 	if err := db.First(&entry, id).Error; err != nil {
 		return err
@@ -34,7 +34,7 @@ func UpdateCustomHandle(db *gorm.DB, handle string, id int) error {
 	return db.Save(&entry).Error
 }
 
-func GetEntryByID(db *gorm.DB, id int) (*datatypes.Entry, error) {
+func GetEntryByID(db *gorm.DB, id int64) (*datatypes.Entry, error) {
 	var entry datatypes.Entry
 	if err := db.First(&entry, id).Error; err != nil {
 		return nil, err

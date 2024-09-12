@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetJustClicksDB(db *gorm.DB, paramkey int, user string) ([]datatypes.Click, error, bool) {
+func GetJustClicksDB(db *gorm.DB, paramkey int64, user string) ([]datatypes.Click, error, bool) {
 	err := db.Model(&datatypes.Entry{}).Where("id = ? AND user = ?", paramkey, user).Select("id").First(&datatypes.Entry{}).Error
 	if err != nil {
 		return nil, err, true

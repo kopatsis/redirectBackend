@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetSingleEntryDB(db *gorm.DB, user string, id int) (datatypes.ShortenedEntry, error, bool) {
+func GetSingleEntryDB(db *gorm.DB, user string, id int64) (datatypes.ShortenedEntry, error, bool) {
 	var entry datatypes.Entry
 	err := db.First(&entry, id).Error
 	if err != nil {
@@ -129,7 +129,7 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]da
 	return returnEntries, page, nil
 }
 
-func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid string) (datatypes.EntryList, error, string) {
+func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid string) (datatypes.EntryList, string, error) {
 
 	page, err := strconv.Atoi(c.DefaultQuery("p", "1"))
 	if err != nil || page <= 0 {
@@ -151,13 +151,13 @@ func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid s
 	if search != "" {
 		filteredEntries, page, err = SearchFilterEntries(db, userid, search, sort, page)
 		if err != nil {
-			return datatypes.EntryList{}, err, "failed to query actual entries"
+			return datatypes.EntryList{}, "failed to query actual entries", err
 		}
 
 	} else {
 		filteredEntries, page, err = GetQueriedDB(db, userid, sort, page)
 		if err != nil {
-			return datatypes.EntryList{}, err, "failed to query actual entries"
+			return datatypes.EntryList{}, "failed to query actual entries", err
 		}
 	}
 
@@ -176,7 +176,7 @@ func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid s
 		Sort:            sort,
 	}
 
-	return ret, nil, ""
+	return ret, "", nil
 }
 
 func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
@@ -188,7 +188,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		response, err, reason := QueryEntriesShared(app, db, c, userid)
+		response, reason, err := QueryEntriesShared(app, db, c, userid)
 		if err != nil {
 			errorGet(c, err, reason)
 		}
@@ -228,7 +228,7 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			entriesResult, entriesErr, entriesMsg = QueryEntriesShared(app, db, c, userid)
+			entriesResult, entriesMsg, entriesErr = QueryEntriesShared(app, db, c, userid)
 		}()
 
 		wg.Add(1)

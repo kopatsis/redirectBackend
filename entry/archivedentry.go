@@ -23,7 +23,7 @@ func errorDelete(c *gin.Context, err error, reason string, errorCode int) {
 	})
 }
 
-func ArchivedEntryDB(db *gorm.DB, id int) error {
+func ArchivedEntryDB(db *gorm.DB, id int64) error {
 	return db.Model(&datatypes.Entry{}).Where("id = ?", id).Updates(datatypes.Entry{
 		Archived:     true,
 		ArchivedDate: time.Now(),

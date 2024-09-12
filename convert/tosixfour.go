@@ -7,11 +7,12 @@ import (
 )
 
 const baseChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
+const LIMIT = 1073741822
 
-func ToSixFour(row int) (string, error) {
+func ToSixFour(row int64) (string, error) {
 
-	if row > 2147483647 || row < 1 {
-		return "", errors.New("row of " + strconv.Itoa(row) + " not in allowed range")
+	if row > LIMIT || row < 1 {
+		return "", errors.New("row of " + strconv.FormatInt(row, 10) + " not in allowed range")
 	}
 
 	var result strings.Builder
