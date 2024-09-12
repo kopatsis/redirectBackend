@@ -1,19 +1,25 @@
 package entry
 
 import (
+	"bytes"
 	"c361main/convert"
 	"c361main/datatypes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"net/url"
+	"os"
+	"slices"
+	"strconv"
 	"strings"
 
 	"math/rand"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"github.com/google/martian/v3/log"
 	"gorm.io/gorm"
 )
 
@@ -65,6 +71,7 @@ func GetTheNewID() (int64, string, error) {
 			try++
 			continue
 		}
+
 		lower := strings.ToLower(st)
 		for _, word := range FILTER {
 			if strings.Contains(word, lower) {
@@ -72,12 +79,18 @@ func GetTheNewID() (int64, string, error) {
 				continue
 			}
 		}
+
+		if slices.Contains(RESERVE, attempt) {
+			try++
+			continue
+		}
+
 		return attempt, st, nil
 	}
 	return 0, "", errors.New("unable to generate a number within constraints")
 }
 
-func AttemptToPost(db *gorm.DB, rdb *redis.Client, entry *datatypes.Entry) (string, error) {
+func AttemptToPost(db *gorm.DB, rdb *redis.Client, httpClient *http.Client, entry *datatypes.Entry) (string, error) {
 	try := 0
 	for try < 10 {
 		id, param, err := GetTheNewID()
@@ -113,14 +126,72 @@ func AttemptToPost(db *gorm.DB, rdb *redis.Client, entry *datatypes.Entry) (stri
 	}
 
 	if _, err := PostEntryFullDB(db, entry); err != nil {
+		if err := ErrorAlertEmail(httpClient, newID, true); err != nil {
+			log.Println("Couldn't send error alert email for reserve fail: " + err.Error())
+		}
 		return "", err
 	}
 
+	if err := ErrorAlertEmail(httpClient, newID, false); err != nil {
+		log.Println("Couldn't send error alert email for reserve success: " + err.Error())
+	}
 	return st, nil
-
 }
 
-func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
+func ErrorAlertEmail(httpClient *http.Client, id int64, failed bool) error {
+	idSt := strconv.FormatInt(id, 10)
+
+	subject := "HAD TO USE RESERVE FOR ADD ID"
+	if failed {
+		subject = "FAILED TO USE RESERVE FOR ADD ID"
+	}
+
+	body := "ID :" + idSt + "\nPlease redo the RESERVED and redeploy ASAP"
+
+	passcode := os.Getenv("CHECK_PASSCODE")
+	if passcode == "" {
+		return errors.New("no passcode exists in the environment")
+	}
+
+	payload := map[string]string{
+		"subject": subject,
+		"body":    body,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	checkURL := os.Getenv("PAY_API_URL")
+	if checkURL == "" {
+		checkURL = "https://pay.shortentrack.com"
+	}
+
+	checkURL += "/administrative/internalemail"
+
+	req, err := http.NewRequest("POST", checkURL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("X-Passcode-ID", passcode)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("failed to send email alert")
+	}
+
+	return nil
+}
+
+func PostEntry(db *gorm.DB, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var entry datatypes.Entry
 
@@ -136,14 +207,14 @@ func PostEntry(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		sixFour, err := AttemptToPost(db, rdb, &entry)
+		sixFour, err := AttemptToPost(db, rdb, httpClient, &entry)
 		if err != nil {
 			errorPost(c, err, "Could not post to db")
 			return
 		}
 
 		if err := rdb.Set(context.Background(), sixFour, entry.RealURL, 0).Err(); err != nil {
-			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", sixFour, entry.RealURL, err.Error())
+			errorPost(c, err, "Could not post to redis")
 			return
 		}
 
