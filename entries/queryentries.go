@@ -110,7 +110,7 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]da
 	var filteredEntries []datatypes.ShortenedEntry
 
 	for _, entry := range entries {
-		if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) {
+		if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) && !fuzzy.MatchFold(search, entry.CustomHandle) {
 			continue
 		}
 
