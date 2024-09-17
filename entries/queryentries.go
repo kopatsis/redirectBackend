@@ -5,6 +5,7 @@ import (
 	"c361main/datatypes"
 	"c361main/user"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -101,7 +102,7 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 	return shortenedEntries, page, nil
 }
 
-func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]datatypes.ShortenedEntry, int, error) {
+func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int, paying bool) ([]datatypes.ShortenedEntry, int, error) {
 	entries, _, err := GetQueriedDB(db, user, sort, 0)
 	if err != nil {
 		return []datatypes.ShortenedEntry{}, 0, err
@@ -110,8 +111,14 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]da
 	var filteredEntries []datatypes.ShortenedEntry
 
 	for _, entry := range entries {
-		if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) && !fuzzy.MatchFold(search, entry.CustomHandle) {
-			continue
+		if paying {
+			if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) && !fuzzy.MatchFold(search, entry.CustomHandle) {
+				continue
+			}
+		} else {
+			if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) {
+				continue
+			}
 		}
 
 		filteredEntries = append(filteredEntries, entry)
@@ -129,7 +136,7 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int) ([]da
 	return returnEntries, page, nil
 }
 
-func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid string) (datatypes.EntryList, string, error) {
+func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid string, paying bool) (datatypes.EntryList, string, error) {
 
 	page, err := strconv.Atoi(c.DefaultQuery("p", "1"))
 	if err != nil || page <= 0 {
@@ -149,7 +156,7 @@ func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid s
 	var filteredEntries []datatypes.ShortenedEntry
 
 	if search != "" {
-		filteredEntries, page, err = SearchFilterEntries(db, userid, search, sort, page)
+		filteredEntries, page, err = SearchFilterEntries(db, userid, search, sort, page, paying)
 		if err != nil {
 			return datatypes.EntryList{}, "failed to query actual entries", err
 		}
@@ -179,18 +186,34 @@ func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid s
 	return ret, "", nil
 }
 
-func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
+func QueryEntries(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(app, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
 		}
 
-		response, reason, err := QueryEntriesShared(app, db, c, userid)
+		paying := false
+		if inFirebase {
+			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			if err != nil {
+				errorGet(c, err, "failed to correctly check status of user payment")
+				return
+			}
+		}
+
+		response, reason, err := QueryEntriesShared(app, db, c, userid, paying)
 		if err != nil {
 			errorGet(c, err, reason)
+		}
+
+		if !paying {
+			for i, e := range response.FilteredEntries {
+				e.CustomHandle = ""
+				response.FilteredEntries[i] = e
+			}
 		}
 
 		c.JSON(200, gin.H{
@@ -200,7 +223,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
+func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id10, err := convert.FromSixFour(c.Param("id"))
@@ -209,10 +232,19 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(app, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
+		}
+
+		paying := false
+		if inFirebase {
+			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			if err != nil {
+				errorGet(c, err, "failed to correctly check status of user payment")
+				return
+			}
 		}
 
 		var wg sync.WaitGroup
@@ -228,7 +260,7 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			entriesResult, entriesMsg, entriesErr = QueryEntriesShared(app, db, c, userid)
+			entriesResult, entriesMsg, entriesErr = QueryEntriesShared(app, db, c, userid, paying)
 		}()
 
 		wg.Add(1)
@@ -242,6 +274,14 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB) gin.HandlerFunc {
 		if entriesErr != nil {
 			errorGet(c, entriesErr, entriesMsg)
 			return
+		}
+
+		if !paying {
+			entryResult.CustomHandle = ""
+			for i, e := range entriesResult.FilteredEntries {
+				e.CustomHandle = ""
+				entriesResult.FilteredEntries[i] = e
+			}
 		}
 
 		response := gin.H{

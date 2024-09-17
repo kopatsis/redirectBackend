@@ -5,6 +5,7 @@ import (
 	"c361main/datatypes"
 	"c361main/user"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -15,6 +16,16 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
+
+func CreateCustomHandleStruct(url, userid string) string {
+	custom := datatypes.Custom{
+		URL:    url,
+		UserID: userid,
+	}
+
+	str, _ := json.Marshal(custom)
+	return string(str)
+}
 
 func CheckCustomHandleExists(db *gorm.DB, handle string) (bool, error) {
 	var count int64
@@ -161,7 +172,7 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 			return
 		}
 
-		if err := rdb.Set(context.Background(), json.Handle, entry.RealURL, 0).Err(); err != nil {
+		if err := rdb.Set(context.Background(), json.Handle, CreateCustomHandleStruct(entry.RealURL, userid), 0).Err(); err != nil {
 			errorPatch(c, err, "could not save to redis", 400)
 			return
 		}
