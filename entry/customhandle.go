@@ -58,7 +58,7 @@ func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.Ha
 
 		handle := c.Param("id")
 
-		if len(handle) < 7 || len(handle) > 256 {
+		if len(handle) < 7 || len(handle) > 128 {
 			errorPatch(c, errors.New("wrong size for new handle"), "Invalid or missing JSON input", 400)
 			return
 		}
@@ -100,6 +100,25 @@ func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.Ha
 
 func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userid, inFirebase, err := user.GetUserID(app, c)
+		if err != nil {
+			errorPatch(c, err, "failed to get jwt or header user id", 400)
+			return
+		}
+
+		paying := false
+		if inFirebase {
+			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			if err != nil {
+				errorPatch(c, err, "failed to correctly check status of user payment", 400)
+				return
+			}
+		}
+
+		if !paying {
+			errorPatch(c, errors.New("must be a paying membership to modify custom handle"), "not a valid paying member", 400)
+			return
+		}
 
 		id10, err := convert.FromSixFour(c.Param("id"))
 		if err != nil {
@@ -133,28 +152,8 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 			return
 		}
 
-		userid, inFirebase, err := user.GetUserID(app, c)
-		if err != nil {
-			errorPatch(c, err, "failed to get jwt or header user id", 400)
-			return
-		}
-
 		if userid != entry.User {
 			errorPatch(c, errors.New("unauthorized"), "Doesn't belong to that user for entry", 400)
-			return
-		}
-
-		paying := false
-		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
-			if err != nil {
-				errorPatch(c, err, "failed to correctly check status of user payment", 400)
-				return
-			}
-		}
-
-		if !paying {
-			errorPatch(c, errors.New("must be a paying membership to modify custom handle"), "not a valid paying member", 400)
 			return
 		}
 
@@ -184,32 +183,19 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 			}
 		}
 
+		c.JSON(200, gin.H{
+			"custom": json.Handle,
+		})
+
 	}
 }
 
 func DeleteCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		id10, err := convert.FromSixFour(c.Param("id"))
-		if err != nil {
-			errorPatch(c, err, "Failed to convert id param", 400)
-			return
-		}
-
-		entry, err := GetEntryByID(db, id10)
-		if err != nil {
-			errorPatch(c, err, "Could not get actual entry", 400)
-			return
-		}
-
 		userid, inFirebase, err := user.GetUserID(app, c)
 		if err != nil {
 			errorPatch(c, err, "failed to get jwt or header user id", 400)
-			return
-		}
-
-		if userid != entry.User {
-			errorPatch(c, errors.New("unauthorized"), "Doesn't belong to that user for entry", 400)
 			return
 		}
 
@@ -227,6 +213,23 @@ func DeleteCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpC
 			return
 		}
 
+		id10, err := convert.FromSixFour(c.Param("id"))
+		if err != nil {
+			errorPatch(c, err, "Failed to convert id param", 400)
+			return
+		}
+
+		entry, err := GetEntryByID(db, id10)
+		if err != nil {
+			errorPatch(c, err, "Could not get actual entry", 400)
+			return
+		}
+
+		if userid != entry.User {
+			errorPatch(c, errors.New("unauthorized"), "Doesn't belong to that user for entry", 400)
+			return
+		}
+
 		if err := UpdateCustomHandle(db, "", id10); err != nil {
 			errorPatch(c, err, "could not save to db", 400)
 			return
@@ -236,5 +239,7 @@ func DeleteCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpC
 			errorPatch(c, err, "could not save old handle to redis", 400)
 			return
 		}
+
+		c.Status(204)
 	}
 }
