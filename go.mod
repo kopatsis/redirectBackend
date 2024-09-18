@@ -3,7 +3,6 @@ module c361main
 go 1.21.6
 
 require (
-	cloud.google.com/go/datastore v1.15.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-co-op/gocron v1.37.0
 	github.com/go-redis/redis/v8 v8.11.5

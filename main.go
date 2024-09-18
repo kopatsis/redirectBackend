@@ -4,7 +4,6 @@ import (
 	"c361main/database"
 	"c361main/entries"
 	"c361main/platform"
-	"c361main/routes"
 	"context"
 	"encoding/base64"
 	"log"
@@ -12,9 +11,7 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/datastore"
 	firebase "firebase.google.com/go/v4"
-	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
@@ -85,26 +82,4 @@ func main() {
 	if err := http.ListenAndServe(":"+port, rtr); err != nil {
 		log.Fatalf("There was an error with the http server: %v", err)
 	}
-}
-
-func DefineRoutesReal(rtr *gin.Engine, client *datastore.Client) {
-	rtr.GET("/", func(c *gin.Context) { //
-		c.JSON(200, gin.H{ //
-			"tik": "tok", //
-		}) //
-	}) //
-
-	rtr.POST("/user", routes.PostUser(client))
-	rtr.POST("/login", routes.PostLoginUser(client))
-	rtr.POST("/entry", routes.PostEntry(client))
-	rtr.GET("/entry/:id", routes.GetEntry(client))
-	rtr.DELETE("/entry/:id", routes.DeleteEntry(client))
-	rtr.PATCH("/entry/:id", routes.PatchEntry(client))
-	rtr.GET("/user/:id/entries", routes.GetEntries(client))
-	rtr.GET("/r/:id", routes.Redirect(client)) //
-
-	rtr.POST("/analyze", routes.PostClick(client))                 //
-	rtr.GET("/analyze/hourly/:id", routes.GetClicksHourly(client)) //
-	rtr.GET("/analyze/daily/:id", routes.GetClicksDaily(client))   //
-	rtr.GET("/analyze/weekly/:id", routes.GetClicksWeekly(client)) //
 }
