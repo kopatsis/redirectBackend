@@ -11,7 +11,7 @@ type Entry struct {
 	ID           int64     `gorm:"primaryKey;autoIncrement:false" json:"-"`
 	User         string    `gorm:"index" json:"user"`
 	RealURL      string    `json:"url"`
-	CustomHandle string    `gorm:"unique;index" json:"-"`
+	CustomHandle string    `gorm:"index" json:"-"`
 	Count        int       `json:"-"`
 	Archived     bool      `json:"-"`
 	Date         time.Time `json:"-"`

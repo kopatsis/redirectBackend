@@ -4,20 +4,22 @@ import (
 	"bytes"
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/user"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 
 	"math/rand"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -41,6 +43,12 @@ func errorPost(c *gin.Context, err error, reason string) {
 		"Error Type":  reason,
 		"Exact Error": err.Error(),
 	})
+}
+
+func IsValidURL(rawURL string) bool {
+	urlPattern := `^(http|https)://((localhost|[0-9]{1,3}(\.[0-9]{1,3}){3})|([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}))(:[0-9]+)?(/.*)?$`
+	matched, _ := regexp.MatchString(urlPattern, rawURL)
+	return matched
 }
 
 func PostEntryDB(db *gorm.DB, entry *datatypes.Entry) (int64, error) {
@@ -191,8 +199,15 @@ func ErrorAlertEmail(httpClient *http.Client, id int64, failed bool) error {
 	return nil
 }
 
-func PostEntry(db *gorm.DB, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
+func PostEntry(db *gorm.DB, rdb *redis.Client, app *firebase.App, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		userid, _, err := user.GetUserID(app, c)
+		if err != nil {
+			errorPatch(c, err, "Failed to get user id", 400)
+			return
+		}
+
 		var entry datatypes.Entry
 
 		if err := c.ShouldBindJSON(&entry); err != nil {
@@ -200,12 +215,20 @@ func PostEntry(db *gorm.DB, rdb *redis.Client, httpClient *http.Client) gin.Hand
 			return
 		}
 
+		fmt.Println(entry.RealURL + " :::: 1")
+
+		entry.User = userid
+
 		entry.InitalizeFormat()
 
-		if _, err := url.Parse(entry.RealURL); err != nil {
-			errorPost(c, err, "Not a URL that can be parsed")
+		fmt.Println(entry.RealURL + " :::: 2")
+
+		if !IsValidURL(entry.RealURL) {
+			errorPost(c, errors.New("not real url"), "Not a URL that can be parsed")
 			return
 		}
+
+		fmt.Println(entry.RealURL + " :::: 3")
 
 		sixFour, err := AttemptToPost(db, rdb, httpClient, &entry)
 		if err != nil {

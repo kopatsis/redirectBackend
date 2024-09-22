@@ -19,7 +19,7 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.Use(CORSMiddleware())
 
 	router.POST("/user", user.PostUser())
-	router.POST("/entry", entry.PostEntry(db, rdb, httpClient))
+	router.POST("/entry", entry.PostEntry(db, rdb, firebase, httpClient))
 	router.POST("/merge", user.MergeUser(db, firebase))
 
 	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, firebase, rdb))

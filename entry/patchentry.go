@@ -6,7 +6,6 @@ import (
 	"c361main/user"
 	"context"
 	"errors"
-	"net/url"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
@@ -56,8 +55,8 @@ func PatchEntryURL(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.Handle
 		}
 
 		json.URL = datatypes.EnsureHttpPrefix(json.URL)
-		if _, err := url.Parse(json.URL); err != nil {
-			errorPatch(c, err, "Not a URL that can be parsed", 400)
+		if !IsValidURL(json.URL) {
+			errorPatch(c, errors.New("not real url"), "Not a URL that can be parsed", 400)
 			return
 		}
 

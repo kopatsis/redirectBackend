@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -15,7 +16,11 @@ func hasEmailPasswordAccount(client *auth.Client, uid string) (bool, error) {
 		return false, err
 	}
 
+	fmt.Println(userRecord.Email)
+
 	for _, provider := range userRecord.ProviderUserInfo {
+		fmt.Println(provider.DisplayName)
+		fmt.Println(provider.ProviderID)
 		if provider.ProviderID == "password" {
 			return true, nil
 		}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func CheckPaymentStatus(userid string, httpClient *http.Client) (bool, error) {
@@ -35,6 +36,10 @@ func CheckPaymentStatus(userid string, httpClient *http.Client) (bool, error) {
 
 	if resp.StatusCode == 400 || resp.StatusCode == 500 {
 		return false, errors.New("server error")
+	}
+
+	if !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+		return false, errors.New("unexpected content type, expected JSON")
 	}
 
 	var result struct {
