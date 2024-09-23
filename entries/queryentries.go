@@ -5,7 +5,6 @@ import (
 	"c361main/datatypes"
 	"c361main/user"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,8 +74,6 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 		return nil, 0, err
 	}
 
-	fmt.Println(entries)
-
 	if len(entries) == 0 && page > 1 {
 		page = 1
 		query = query.Offset(-1)
@@ -101,9 +98,6 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 		}
 		shortenedEntries = append(shortenedEntries, shortenedEntry)
 	}
-
-	fmt.Println("???")
-	fmt.Println(shortenedEntries)
 
 	return shortenedEntries, page, nil
 }
@@ -213,10 +207,6 @@ func QueryEntries(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.H
 		response, reason, err := QueryEntriesShared(app, db, c, userid, paying)
 		if err != nil {
 			errorGet(c, err, reason)
-		}
-
-		for _, e := range response.FilteredEntries {
-			fmt.Println(e)
 		}
 
 		if !paying {

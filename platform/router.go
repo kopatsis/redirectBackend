@@ -38,7 +38,8 @@ func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *htt
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
 
-	router.GET("/haspassword", user.HasPasswordHandler(firebase))
+	router.GET("/haspassword", user.HasPasswordHandler(firebase, rdb))
+	router.POST("/haspassword", user.HasPasswordPost(firebase, rdb))
 
 	router.POST("/emailexchange", user.AddExchange(rdb))
 	router.GET("/emailexchange/:id", user.GetExchange(rdb))

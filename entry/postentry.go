@@ -215,20 +215,14 @@ func PostEntry(db *gorm.DB, rdb *redis.Client, app *firebase.App, httpClient *ht
 			return
 		}
 
-		fmt.Println(entry.RealURL + " :::: 1")
-
 		entry.User = userid
 
 		entry.InitalizeFormat()
-
-		fmt.Println(entry.RealURL + " :::: 2")
 
 		if !IsValidURL(entry.RealURL) {
 			errorPost(c, errors.New("not real url"), "Not a URL that can be parsed")
 			return
 		}
-
-		fmt.Println(entry.RealURL + " :::: 3")
 
 		sixFour, err := AttemptToPost(db, rdb, httpClient, &entry)
 		if err != nil {
