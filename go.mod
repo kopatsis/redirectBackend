@@ -7,6 +7,7 @@ require (
 	github.com/go-co-op/gocron v1.37.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/martian/v3 v3.3.2
+	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible

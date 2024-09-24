@@ -1,4 +1,4 @@
-package sendgrid
+package sendgridfn
 
 import (
 	"fmt"
