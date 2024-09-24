@@ -5,6 +5,7 @@ import (
 	"c361main/entries"
 	"c361main/platform"
 	"c361main/specialty/firebaseAuth"
+	"c361main/specialty/sendgridfn"
 	"log"
 	"net/http"
 	"os"
@@ -55,7 +56,9 @@ func main() {
 		Timeout: 10 * time.Second,
 	}
 
-	rtr := platform.New(db, auth, rdb, httpClient)
+	sendgridClient := sendgridfn.InitSendgrid()
+
+	rtr := platform.New(db, auth, rdb, httpClient, sendgridClient)
 
 	port := os.Getenv("PORT")
 	if port == "" {

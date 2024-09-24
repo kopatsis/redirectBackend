@@ -2,7 +2,7 @@ package routes
 
 import (
 	"c361main/payment/redisfn"
-	"c361main/platform"
+	"c361main/platform/middleware"
 	"c361main/specialty/sendgridfn"
 	"context"
 	"net/http"
@@ -35,7 +35,7 @@ func PostPayHandler(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 			return
 		}
 
-		userid, err := platform.GetCookieUserID(c)
+		userid, err := middleware.GetCookieUserID(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "no user in :" + err.Error()})
 			return
@@ -148,7 +148,7 @@ func PostPayHandler(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 
 func PostCancelHandler(rdb *redis.Client, auth *auth.Client, sendgridClient *sendgrid.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userid, err := platform.GetCookieUserID(c)
+		userid, err := middleware.GetCookieUserID(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "no user in :" + err.Error()})
 			return
@@ -190,7 +190,7 @@ func PostCancelHandler(rdb *redis.Client, auth *auth.Client, sendgridClient *sen
 
 func PostUncancelHandler(rdb *redis.Client, auth *auth.Client, sendgridClient *sendgrid.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userid, err := platform.GetCookieUserID(c)
+		userid, err := middleware.GetCookieUserID(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "no user in :" + err.Error()})
 			return
@@ -238,7 +238,7 @@ func PostUpdatePayment(rdb *redis.Client, auth *auth.Client, sendgridClient *sen
 			return
 		}
 
-		userid, err := platform.GetCookieUserID(c)
+		userid, err := middleware.GetCookieUserID(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "no user in :" + err.Error()})
 			return

@@ -4,22 +4,53 @@ import (
 	"c361main/clicks"
 	"c361main/entries"
 	"c361main/entry"
+	"c361main/payment/routes"
+	"c361main/platform/middleware"
 	"c361main/user"
 	"net/http"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/sendgrid/sendgrid-go"
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
+func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client, sendgridClient *sendgrid.Client) *gin.Engine {
 	router := gin.Default()
 
 	router.LoadHTMLGlob("templates/*")
 
-	router.Use(CORSMiddleware())
-	router.Use(CookieMiddleware(rdb))
+	router.Use(middleware.CORSMiddleware())
+	router.Use(middleware.CookieMiddleware(rdb))
+
+	// ROUTES for pay portion
+	router.GET("/", routes.GetHandler(rdb, auth))
+	router.GET("/loginerror", routes.LoginErrorHandler)
+
+	router.POST("/subscription", routes.PostPayHandler(rdb, auth))
+	router.PATCH("/subscription/cancel", routes.PostCancelHandler(rdb, auth, sendgridClient))
+	router.PATCH("/subscription/uncancel", routes.PostUncancelHandler(rdb, auth, sendgridClient))
+	router.PATCH("/subscription", routes.PostUpdatePayment(rdb, auth, sendgridClient))
+
+	router.POST("/multipass", routes.Multipass(rdb, auth))
+
+	router.POST("/webhook", routes.HandleStripeWebhook(rdb, auth, sendgridClient))
+	router.POST("/webhook/equivalent/:id", routes.WebhookEquiv(rdb, auth, sendgridClient))
+
+	router.POST("/administrative/logout", routes.HandleLogAllOut(rdb, auth))
+	router.POST("/administrative/delete", routes.HandleDeleteAccount(rdb, auth))
+
+	router.GET("/check/:id", routes.ExternalGetHandler(rdb))
+	router.POST("/verifyturn", routes.VerifyTurnstileHandler(httpClient))
+
+	router.POST("/helpemail", routes.InternalEmailHandler(httpClient, sendgridClient))
+	router.POST("/administrative/helpemail", routes.ExternalEmailHandler(httpClient, sendgridClient, auth))
+	router.POST("/administrative/internalemail", routes.HandleInternalAlertEmail(sendgridClient))
+
+	router.GET("/websocket/:id", routes.WebSocketHandler(rdb))
+
+	router.POST("/logout", routes.HandleUserLogout())
 
 	// REWRITE routes incl on frontend to have combined
 	router.POST("/user", user.PostUser())
@@ -32,8 +63,6 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 
 	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, auth, rdb, httpClient))
 	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb, httpClient))
-
-	// router.GET("/entries", entries.GetEntries(firebase, db))
 
 	router.GET("/search", entries.QueryEntries(auth, db, httpClient))
 	router.GET("/search/:id", entries.QueryEntriesWithSingle(auth, db, httpClient))

@@ -2,7 +2,7 @@ package routes
 
 import (
 	"c361main/payment/redisfn"
-	"c361main/platform"
+	"c361main/platform/middleware"
 	"c361main/specialty/sendgridfn"
 	"c361main/user"
 	"os"
@@ -58,7 +58,7 @@ func HandleDeleteAccount(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 
 func HandleUserLogout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		platform.RemoveCookie(c)
+		middleware.RemoveCookie(c)
 
 		response := map[string]any{"loggedout": true}
 		c.JSON(200, response)

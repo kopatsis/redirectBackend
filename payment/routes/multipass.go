@@ -2,7 +2,7 @@ package routes
 
 import (
 	"c361main/payment/redisfn"
-	"c361main/platform"
+	"c361main/platform/middleware"
 	"c361main/user"
 	"net/http"
 	"os"
@@ -38,7 +38,7 @@ func Multipass(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 			return
 		}
 
-		platform.CreateCookie(c, uid)
+		middleware.CreateCookie(c, uid)
 		c.Redirect(http.StatusSeeOther, "/")
 	}
 }
