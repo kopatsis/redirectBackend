@@ -19,32 +19,32 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 	router.Use(CORSMiddleware())
 
 	router.POST("/user", user.PostUser())
-	router.POST("/entry", entry.PostEntry(db, rdb, firebase, httpClient))
-	router.POST("/merge", user.MergeUser(db, firebase))
+	router.POST("/entry", entry.PostEntry(db, rdb, auth, httpClient))
+	router.POST("/merge", user.MergeUser(db, auth))
 
-	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, firebase, rdb))
-	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, firebase, rdb))
-	router.PATCH("/entry/:id", entry.PatchEntryURL(db, firebase, rdb))
+	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, auth, rdb))
+	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, auth, rdb))
+	router.PATCH("/entry/:id", entry.PatchEntryURL(db, auth, rdb))
 
-	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, firebase, rdb, httpClient))
-	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, firebase, rdb, httpClient))
+	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, auth, rdb, httpClient))
+	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb, httpClient))
 
 	// router.GET("/entries", entries.GetEntries(firebase, db))
 
-	router.GET("/search", entries.QueryEntries(firebase, db, httpClient))
-	router.GET("/search/:id", entries.QueryEntriesWithSingle(firebase, db, httpClient))
-	router.GET("/entriescsv", entries.GetEntriesCSV(db, firebase, httpClient))
+	router.GET("/search", entries.QueryEntries(auth, db, httpClient))
+	router.GET("/search/:id", entries.QueryEntriesWithSingle(auth, db, httpClient))
+	router.GET("/entriescsv", entries.GetEntriesCSV(db, auth, httpClient))
 
-	router.GET("/clicks/:id", clicks.GetClicksByParam(db, firebase, httpClient))
-	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, firebase, httpClient))
+	router.GET("/clicks/:id", clicks.GetClicksByParam(db, auth, httpClient))
+	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, auth, httpClient))
 
-	router.GET("/haspassword", user.HasPasswordHandler(firebase, rdb))
-	router.POST("/haspassword", user.HasPasswordPost(firebase, rdb))
+	router.GET("/haspassword", user.HasPasswordHandler(auth, rdb))
+	router.POST("/haspassword", user.HasPasswordPost(auth, rdb))
 
 	router.POST("/emailexchange", user.AddExchange(rdb))
 	router.GET("/emailexchange/:id", user.GetExchange(rdb))
 
-	router.GET("/customcheck/:id", entry.CheckCustomHandle(db, firebase, rdb))
+	router.GET("/customcheck/:id", entry.CheckCustomHandle(db, auth, rdb))
 
 	return router
 
