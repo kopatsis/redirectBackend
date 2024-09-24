@@ -16,6 +16,8 @@ import (
 func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
 	router := gin.Default()
 
+	router.LoadHTMLGlob("templates/*")
+
 	router.Use(CORSMiddleware())
 	router.Use(CookieMiddleware(rdb))
 
