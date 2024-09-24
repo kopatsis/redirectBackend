@@ -17,7 +17,9 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
+	router.Use(CookieMiddleware(rdb))
 
+	// REWRITE routes incl on frontend to have combined
 	router.POST("/user", user.PostUser())
 	router.POST("/entry", entry.PostEntry(db, rdb, auth, httpClient))
 	router.POST("/merge", user.MergeUser(db, auth))
