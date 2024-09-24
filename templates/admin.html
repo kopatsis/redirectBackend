@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subscription Admin</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+
+<body>
+  <div id="loader" style="display: none"></div>
+
+  <button @click="logoutButton">Close and Log Out</button>
+
+  <div>
+    <div>Email: <b>{{ .Email }}</b></div>
+
+    {{ if .Expiring }}
+      <span style="color: red">Please update your payment information ASAP.</span>
+    {{ end }}
+
+    <div>You are currently on the monthly paid membership plan.</div>
+
+    <div>Next Billing Date: {{ .EndDate.Format "01/02/2006" }}</div>
+
+    <div>
+      <div>Default Payment Method Information:</div>
+      {{ if eq .PaymentType "Card" }}
+        <div>
+          Card Brand: {{ .CardBrand }}<br />
+          Last Four Digits: **** **** **** {{ .LastFour }}<br />
+          Expiration Date: {{ .ExpMonth }} / {{ .ExpYear }}
+        </div>
+      {{ else }}
+        <div>Payment Type: {{ .PaymentType }}</div>
+      {{ end }}
+
+      <div x-data="{ showForm: false }">
+        <button @click="showForm = !showForm">
+          Update Default Payment Information
+        </button>
+
+        <div x-show="showForm">
+          <form class="form" id="payment-form">
+            <div id="payment-element"></div>
+            <button class="submit" type="submit">Update</button>
+            <button @click="showForm = false" type="button">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div>
+        No longer down for the paid membership? Cancel below and you will no
+        longer be charged.
+      </div>
+      <div x-data="{ showConfirm: false }">
+        <button x-show="!showConfirm" @click="showConfirm = true">
+          Cancel Membership
+        </button>
+
+        <div x-show="showConfirm">
+          <div>Are you sure you want to cancel your membership?</div>
+          <div class="buttonRow">
+            <button @click="cancelMembership">Cancel Membership</button>
+            <button @click="showConfirm = false">Go Back</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        You can always re-activate it before the current billing period ends.
+      </div>
+    </div>
+
+    <div style="color: rgb(222, 0, 0)" id="error-message"></div>
+  </div>
+
+  <script>
+    async function cancelMembership() {
+      document.getElementById("loader").style.display = "flex";
+
+      fetch("/subscription/cancel", {
+        method: "PATCH",
+        credentials: "include",
+      })
+        .then((response) => {
+          if (response.ok) {
+            document.getElementById("loader").style.display = "none";
+            window.location.reload();
+          } else {
+            response.text().then((text) => {
+              document.getElementById("error-message").textContent =
+                "Error processing cancellation, please try again";
+            });
+            document.getElementById("loader").style.display = "none";
+          }
+        })
+        .catch(() => {
+          document.getElementById("error-message").textContent =
+            "Error processing cancellation, please try again";
+          document.getElementById("loader").style.display = "none";
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const stripe = Stripe(
+        "pk_test_51PqnrdFKfZyWoeG1V6v3bJ9gBR5HTosFE2Awg8qEQ7HVWOpLP1QelADSBYHrUtBzxj3TdNTzITLjUrAlZNkWYLOT00EtiIbE8I"
+      );
+      const clientSecret = "{{ .Secret }}";
+
+      const elements = stripe.elements({ clientSecret });
+      const paymentElement = elements.create("payment");
+      paymentElement.mount("#payment-element");
+
+      const form = document.getElementById("payment-form");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        document.getElementById("loader").style.display = "flex";
+
+        try {
+          const { setupIntent, error } = await stripe.confirmSetup({
+            elements,
+            confirmParams: {
+              return_url: window.location.href,
+            },
+            redirect: "if_required",
+          });
+
+          if (error) {
+            document.getElementById("error-message").textContent =
+              error.message;
+          } else {
+            const paymentMethodId = setupIntent.payment_method;
+
+            const response = await fetch("/subscription", {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({ paymentMethodID: paymentMethodId }),
+            });
+
+            if (response.ok) {
+              location.reload();
+            } else {
+              const errorData = await response.json();
+              document.getElementById("error-message").textContent =
+                errorData.error;
+            }
+          }
+        } catch (err) {
+          document.getElementById("error-message").textContent =
+            "Error processing payment, please try again.";
+        } finally {
+          document.getElementById("loader").style.display = "none";
+        }
+      });
+    });
+
+    function logoutButton() {
+      fetch("/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include'
+      }).finally(() => {
+        window.close();
+      });
+    }
+  </script>
+</body>
+
+</html>

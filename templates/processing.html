@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Processing</title>
+    <script
+        src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js"
+        defer
+    ></script>
+</head>
+<body>
+    <div id="loader" style="display: none"></div>
+
+    <button onclick="logoutButton()">Close and Log Out</button>
+
+    <div>
+        <div>Email: <b>{{ .Email }}</b></div>
+
+        <div>
+            Your subscription is taking an abnormally long time to process with your payment provider.
+        </div>
+
+        <div>
+            Hang tight while we do our thing and make sure it works. This page will automatically refresh when the payment fully processes.
+        </div>
+
+        <div style="color: rgb(222, 0, 0)" id="error-message"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var id = "{{ .ID }}";
+            var socket = new WebSocket("ws://" + window.location.host + "/websocket/" + id);
+
+            socket.onmessage = function (event) {
+                if (event.data === "refresh") {
+                    location.reload();
+                } else if (event.data === "error") {
+                    document.getElementById("error-message").textContent =
+                        "Timeout Error: We will reach out to you by email to update you on your subscription. Sorry :(";
+                }
+            };
+
+            socket.onclose = function (event) {
+                console.log("WebSocket closed:", event);
+            };
+        });
+
+        function logoutButton() {
+            fetch("/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include'
+            }).finally(() => {
+                window.close();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ending</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js" defer></script>
+</head>
+
+<body>
+
+    <div id="loader" style="display: none;"></div>
+
+    <button @click="logoutButton">Close and Log Out</button>
+
+    <div>
+        <div>
+            Email: <b>{{ .Email }}</b>
+        </div>
+
+        <div>Your membership has (unfortunately) been cancelled and benefits will (unfortunately) be ending.</div>
+
+        <div>Membership End Date: {{ .EndDate.Format "01/02/2006" }}</div>
+
+        <div>But it's not too late to un-cancel</div>
+
+        <div x-data="undoHandler()">
+            <button class="submit" @click="undoCancellation">Uncancel Membership</button>
+        </div>
+
+        <div style="color: rgb(222, 0, 0)" id="error-message"></div>
+    </div>
+
+    <script>
+        function undoHandler() {
+            return {
+                errorMessage: "",
+                async undoCancellation() {
+                    document.getElementById("loader").style.display = "flex";
+                    try {
+                        const response = await fetch("/subscription/uncancel", {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            credentials: "include",
+                        });
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            this.errorMessage =
+                                "Failed to undo cancellation. Please try again.";
+                        }
+                    } catch (error) {
+                        this.errorMessage = "An error occurred. Please try again.";
+                    } finally {
+                        document.getElementById("loader").style.display = "none";
+                    }
+                },
+            };
+        }
+
+        function logoutButton() {
+            fetch("/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include'
+            }).finally(() => {
+                window.close();
+            });
+        }
+    </script>
+
+</body>
+
+</html>
