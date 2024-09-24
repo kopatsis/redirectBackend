@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 
-	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -42,9 +41,9 @@ func addHasPasswordAccount(uid string, rdb *redis.Client) error {
 	return rdb.Set(context.Background(), ":HPA:"+uid, []byte{1}, 0).Err()
 }
 
-func HasPasswordPost(firebase *firebase.App, rdb *redis.Client) gin.HandlerFunc {
+func HasPasswordPost(auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, err, empty := GetSubFromJWT(firebase, c)
+		id, err, empty := GetSubFromJWT(auth, c)
 		if empty {
 			c.JSON(401, gin.H{
 				"Error Type":  "Incorrect auth",
@@ -71,9 +70,9 @@ func HasPasswordPost(firebase *firebase.App, rdb *redis.Client) gin.HandlerFunc 
 	}
 }
 
-func HasPasswordHandler(firebase *firebase.App, rdb *redis.Client) gin.HandlerFunc {
+func HasPasswordHandler(auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, err, empty := GetSubFromJWT(firebase, c)
+		id, err, empty := GetSubFromJWT(auth, c)
 		if empty {
 			c.JSON(401, gin.H{
 				"Error Type":  "Incorrect auth",

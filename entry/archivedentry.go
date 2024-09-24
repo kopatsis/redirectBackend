@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -30,10 +30,10 @@ func ArchivedEntryDB(db *gorm.DB, id int64) error {
 	}).Error
 }
 
-func ArchivedEntry(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.HandlerFunc {
+func ArchivedEntry(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, _, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorDelete(c, err, "Failed to get user id", 400)
 			return

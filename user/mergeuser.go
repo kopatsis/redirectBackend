@@ -3,15 +3,15 @@ package user
 import (
 	"c361main/datatypes"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func MergeUser(db *gorm.DB, app *firebase.App) gin.HandlerFunc {
+func MergeUser(db *gorm.DB, auth *auth.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		firebaseID, localID, err := GetBothIDs(app, c)
+		firebaseID, localID, err := GetBothIDs(auth, c)
 		if err != nil {
 			errorPost(c, err, "couldn't get both IDs")
 		}

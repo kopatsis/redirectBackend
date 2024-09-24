@@ -11,7 +11,7 @@ import (
 	"os"
 	"regexp"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -53,7 +53,7 @@ func GetEntryByID(db *gorm.DB, id int64) (*datatypes.Entry, error) {
 	return &entry, nil
 }
 
-func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.HandlerFunc {
+func CheckCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		handle := c.Param("id")
@@ -69,7 +69,7 @@ func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.Ha
 			return
 		}
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, _, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorPatch(c, err, "failed to get jwt or header user id", 400)
 			return
@@ -98,9 +98,9 @@ func CheckCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.Ha
 	}
 }
 
-func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
+func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userid, inFirebase, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorPatch(c, err, "failed to get jwt or header user id", 400)
 			return
@@ -190,10 +190,10 @@ func PatchCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpCl
 	}
 }
 
-func DeleteCustomHandle(db *gorm.DB, app *firebase.App, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
+func DeleteCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, inFirebase, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorPatch(c, err, "failed to get jwt or header user id", 400)
 			return

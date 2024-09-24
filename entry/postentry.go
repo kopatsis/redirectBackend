@@ -19,7 +19,7 @@ import (
 
 	"math/rand"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -199,10 +199,10 @@ func ErrorAlertEmail(httpClient *http.Client, id int64, failed bool) error {
 	return nil
 }
 
-func PostEntry(db *gorm.DB, rdb *redis.Client, app *firebase.App, httpClient *http.Client) gin.HandlerFunc {
+func PostEntry(db *gorm.DB, rdb *redis.Client, auth *auth.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, _, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorPatch(c, err, "Failed to get user id", 400)
 			return

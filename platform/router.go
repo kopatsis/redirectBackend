@@ -7,13 +7,13 @@ import (
 	"c361main/user"
 	"net/http"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
-func New(db *gorm.DB, firebase *firebase.App, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
+func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())

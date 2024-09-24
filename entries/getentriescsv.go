@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -104,12 +104,12 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.ShortenedEntry) {
 	c.Writer.Write(buffer.Bytes())
 }
 
-func GetEntriesCSV(db *gorm.DB, firebase *firebase.App, httpClient *http.Client) gin.HandlerFunc {
+func GetEntriesCSV(db *gorm.DB, auth *auth.Client, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		startTimer := time.Now()
 
-		userid, inFirebase, err := user.GetUserID(firebase, c)
+		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return

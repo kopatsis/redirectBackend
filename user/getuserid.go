@@ -5,15 +5,25 @@ import (
 	"errors"
 	"strings"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 )
 
-func GetSubFromJWT(app *firebase.App, c *gin.Context) (string, error, bool) {
-	authClient, err := app.Auth(context.Background())
-	if err != nil {
-		return "", nil, true
+func VerifyMultipassRetUID(c *gin.Context, auth *auth.Client) (string, error) {
+	idToken := c.PostForm("idToken")
+	if idToken == "" {
+		return "", errors.New("missing idToken in form data")
 	}
+
+	token, err := auth.VerifyIDToken(context.Background(), idToken)
+	if err != nil {
+		return "", errors.New("failed to verify token")
+	}
+
+	return token.UID, nil
+}
+
+func GetSubFromJWT(auth *auth.Client, c *gin.Context) (string, error, bool) {
 
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
@@ -22,7 +32,7 @@ func GetSubFromJWT(app *firebase.App, c *gin.Context) (string, error, bool) {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	token, err := authClient.VerifyIDToken(context.Background(), tokenString)
+	token, err := auth.VerifyIDToken(context.Background(), tokenString)
 	if err != nil {
 		return "", err, false
 	}
@@ -30,8 +40,8 @@ func GetSubFromJWT(app *firebase.App, c *gin.Context) (string, error, bool) {
 	return token.UID, nil, false
 }
 
-func GetUserID(app *firebase.App, c *gin.Context) (string, bool, error) {
-	firebaseID, fireFrr, empty := GetSubFromJWT(app, c)
+func GetUserID(auth *auth.Client, c *gin.Context) (string, bool, error) {
+	firebaseID, fireFrr, empty := GetSubFromJWT(auth, c)
 	localid, localErr := getLocalIDTwo(c)
 
 	if firebaseID != "" && fireFrr == nil {
@@ -50,13 +60,8 @@ func GetUserID(app *firebase.App, c *gin.Context) (string, bool, error) {
 
 }
 
-func GetBothIDs(app *firebase.App, c *gin.Context) (string, string, error) {
+func GetBothIDs(auth *auth.Client, c *gin.Context) (string, string, error) {
 	localid, err := getLocalIDTwo(c)
-	if err != nil {
-		return "", "", err
-	}
-
-	authClient, err := app.Auth(context.Background())
 	if err != nil {
 		return "", "", err
 	}
@@ -68,7 +73,7 @@ func GetBothIDs(app *firebase.App, c *gin.Context) (string, string, error) {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	token, err := authClient.VerifyIDToken(context.Background(), tokenString)
+	token, err := auth.VerifyIDToken(context.Background(), tokenString)
 	if err != nil {
 		return "", "", err
 	}

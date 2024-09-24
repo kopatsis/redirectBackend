@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"gorm.io/gorm"
@@ -136,7 +136,7 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int, payin
 	return returnEntries, page, nil
 }
 
-func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid string, paying bool) (datatypes.EntryList, string, error) {
+func QueryEntriesShared(db *gorm.DB, c *gin.Context, userid string, paying bool) (datatypes.EntryList, string, error) {
 
 	page, err := strconv.Atoi(c.DefaultQuery("p", "1"))
 	if err != nil || page <= 0 {
@@ -186,10 +186,10 @@ func QueryEntriesShared(app *firebase.App, db *gorm.DB, c *gin.Context, userid s
 	return ret, "", nil
 }
 
-func QueryEntries(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
+func QueryEntries(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, inFirebase, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
@@ -204,7 +204,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.H
 			}
 		}
 
-		response, reason, err := QueryEntriesShared(app, db, c, userid, paying)
+		response, reason, err := QueryEntriesShared(db, c, userid, paying)
 		if err != nil {
 			errorGet(c, err, reason)
 		}
@@ -223,7 +223,7 @@ func QueryEntries(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.H
 	}
 }
 
-func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
+func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id10, err := convert.FromSixFour(c.Param("id"))
@@ -232,7 +232,7 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB, httpClient *http.Cli
 			return
 		}
 
-		userid, inFirebase, err := user.GetUserID(app, c)
+		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorGet(c, err, "failed to get jwt or header user id")
 			return
@@ -260,7 +260,7 @@ func QueryEntriesWithSingle(app *firebase.App, db *gorm.DB, httpClient *http.Cli
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			entriesResult, entriesMsg, entriesErr = QueryEntriesShared(app, db, c, userid, paying)
+			entriesResult, entriesMsg, entriesErr = QueryEntriesShared(db, c, userid, paying)
 		}()
 
 		wg.Add(1)

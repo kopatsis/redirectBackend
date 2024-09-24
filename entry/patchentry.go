@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/martian/v3/log"
@@ -20,10 +20,10 @@ func PatchEntryURLDB(db *gorm.DB, id int64, url string) error {
 	}).Error
 }
 
-func PatchEntryURL(db *gorm.DB, app *firebase.App, rdb *redis.Client) gin.HandlerFunc {
+func PatchEntryURL(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		userid, _, err := user.GetUserID(app, c)
+		userid, _, err := user.GetUserID(auth, c)
 		if err != nil {
 			errorPatch(c, err, "Failed to get user id", 400)
 			return
