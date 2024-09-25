@@ -3,15 +3,16 @@ package entries
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/payment/redisfn"
 	"c361main/user"
 	"errors"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"gorm.io/gorm"
 )
@@ -186,7 +187,7 @@ func QueryEntriesShared(db *gorm.DB, c *gin.Context, userid string, paying bool)
 	return ret, "", nil
 }
 
-func QueryEntries(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
+func QueryEntries(auth *auth.Client, db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		userid, inFirebase, err := user.GetUserID(auth, c)
@@ -197,7 +198,7 @@ func QueryEntries(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.H
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorGet(c, err, "failed to correctly check status of user payment")
 				return
@@ -223,7 +224,7 @@ func QueryEntries(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.H
 	}
 }
 
-func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, httpClient *http.Client) gin.HandlerFunc {
+func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		id10, err := convert.FromSixFour(c.Param("id"))
@@ -240,7 +241,7 @@ func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, httpClient *http.Cli
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorGet(c, err, "failed to correctly check status of user payment")
 				return

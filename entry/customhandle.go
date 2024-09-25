@@ -3,11 +3,11 @@ package entry
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/payment/redisfn"
 	"c361main/user"
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"os"
 	"regexp"
 
@@ -98,7 +98,7 @@ func CheckCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Ha
 	}
 }
 
-func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
+func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userid, inFirebase, err := user.GetUserID(auth, c)
 		if err != nil {
@@ -108,7 +108,7 @@ func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpCl
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorPatch(c, err, "failed to correctly check status of user payment", 400)
 				return
@@ -190,7 +190,7 @@ func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpCl
 	}
 }
 
-func DeleteCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client) gin.HandlerFunc {
+func DeleteCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		userid, inFirebase, err := user.GetUserID(auth, c)
@@ -201,7 +201,7 @@ func DeleteCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpC
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorPatch(c, err, "failed to correctly check status of user payment", 400)
 				return

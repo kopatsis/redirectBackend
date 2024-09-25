@@ -1,17 +1,14 @@
 package entry
 
 import (
-	"bytes"
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/specialty/sendgridfn"
 	"c361main/user"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
-	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -22,6 +19,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/sendgrid/sendgrid-go"
 	"gorm.io/gorm"
 )
 
@@ -98,7 +96,7 @@ func GetTheNewID() (int64, string, error) {
 	return 0, "", errors.New("unable to generate a number within constraints")
 }
 
-func AttemptToPost(db *gorm.DB, rdb *redis.Client, httpClient *http.Client, entry *datatypes.Entry) (string, error) {
+func AttemptToPost(db *gorm.DB, rdb *redis.Client, sendgridClient *sendgrid.Client, entry *datatypes.Entry) (string, error) {
 	try := 0
 	for try < 10 {
 		id, param, err := GetTheNewID()
@@ -134,19 +132,19 @@ func AttemptToPost(db *gorm.DB, rdb *redis.Client, httpClient *http.Client, entr
 	}
 
 	if _, err := PostEntryFullDB(db, entry); err != nil {
-		if err := ErrorAlertEmail(httpClient, newID, true); err != nil {
+		if err := ErrorAlertEmail(sendgridClient, newID, true); err != nil {
 			log.Println("Couldn't send error alert email for reserve fail: " + err.Error())
 		}
 		return "", err
 	}
 
-	if err := ErrorAlertEmail(httpClient, newID, false); err != nil {
+	if err := ErrorAlertEmail(sendgridClient, newID, false); err != nil {
 		log.Println("Couldn't send error alert email for reserve success: " + err.Error())
 	}
 	return st, nil
 }
 
-func ErrorAlertEmail(httpClient *http.Client, id int64, failed bool) error {
+func ErrorAlertEmail(sendgridClient *sendgrid.Client, id int64, failed bool) error {
 	idSt := strconv.FormatInt(id, 10)
 
 	subject := "HAD TO USE RESERVE FOR ADD ID"
@@ -156,50 +154,10 @@ func ErrorAlertEmail(httpClient *http.Client, id int64, failed bool) error {
 
 	body := "ID :" + idSt + "\nPlease redo the RESERVED and redeploy ASAP"
 
-	passcode := os.Getenv("CHECK_PASSCODE")
-	if passcode == "" {
-		return errors.New("no passcode exists in the environment")
-	}
-
-	payload := map[string]string{
-		"subject": subject,
-		"body":    body,
-	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	checkURL := os.Getenv("PAY_API_URL")
-	if checkURL == "" {
-		checkURL = "https://pay.shortentrack.com"
-	}
-
-	checkURL += "/administrative/internalemail"
-
-	req, err := http.NewRequest("POST", checkURL, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("X-Passcode-ID", passcode)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to send email alert")
-	}
-
-	return nil
+	return sendgridfn.SendSeriousErrorAlert(sendgridClient, subject, body)
 }
 
-func PostEntry(db *gorm.DB, rdb *redis.Client, auth *auth.Client, httpClient *http.Client) gin.HandlerFunc {
+func PostEntry(db *gorm.DB, rdb *redis.Client, auth *auth.Client, sendgridClient *sendgrid.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		userid, _, err := user.GetUserID(auth, c)
@@ -224,7 +182,7 @@ func PostEntry(db *gorm.DB, rdb *redis.Client, auth *auth.Client, httpClient *ht
 			return
 		}
 
-		sixFour, err := AttemptToPost(db, rdb, httpClient, &entry)
+		sixFour, err := AttemptToPost(db, rdb, sendgridClient, &entry)
 		if err != nil {
 			errorPost(c, err, "Could not post to db")
 			return

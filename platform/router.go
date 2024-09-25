@@ -54,22 +54,22 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 
 	// ROUTES for admin portion
 	router.POST("/user", user.PostUser())
-	router.POST("/entry", entry.PostEntry(db, rdb, auth, httpClient))
+	router.POST("/entry", entry.PostEntry(db, rdb, auth, sendgridClient))
 	router.POST("/merge", user.MergeUser(db, auth))
 
 	router.PATCH("/entry/:id/archive", entry.ArchivedEntry(db, auth, rdb))
 	router.PATCH("/entry/:id/unarchive", entry.UnarchivedEntry(db, auth, rdb))
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db, auth, rdb))
 
-	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, auth, rdb, httpClient))
-	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb, httpClient))
+	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, auth, rdb))
+	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb))
 
-	router.GET("/search", entries.QueryEntries(auth, db, httpClient))
-	router.GET("/search/:id", entries.QueryEntriesWithSingle(auth, db, httpClient))
-	router.GET("/entriescsv", entries.GetEntriesCSV(db, auth, httpClient))
+	router.GET("/search", entries.QueryEntries(auth, db, rdb))
+	router.GET("/search/:id", entries.QueryEntriesWithSingle(auth, db, rdb))
+	router.GET("/entriescsv", entries.GetEntriesCSV(db, auth, rdb))
 
-	router.GET("/clicks/:id", clicks.GetClicksByParam(db, auth, httpClient))
-	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, auth, httpClient))
+	router.GET("/clicks/:id", clicks.GetClicksByParam(db, auth, rdb))
+	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, auth, rdb))
 
 	router.GET("/haspassword", user.HasPasswordHandler(auth, rdb))
 	router.POST("/haspassword", user.HasPasswordPost(auth, rdb))

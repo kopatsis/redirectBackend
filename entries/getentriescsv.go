@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/payment/redisfn"
 	"c361main/user"
 	"encoding/csv"
 	"errors"
-	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
@@ -104,7 +105,7 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.ShortenedEntry) {
 	c.Writer.Write(buffer.Bytes())
 }
 
-func GetEntriesCSV(db *gorm.DB, auth *auth.Client, httpClient *http.Client) gin.HandlerFunc {
+func GetEntriesCSV(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		startTimer := time.Now()
@@ -117,7 +118,7 @@ func GetEntriesCSV(db *gorm.DB, auth *auth.Client, httpClient *http.Client) gin.
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorGet(c, err, "failed to correctly check status of user payment")
 				return

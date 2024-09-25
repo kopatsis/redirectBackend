@@ -3,15 +3,16 @@ package clicks
 import (
 	"c361main/convert"
 	"c361main/datatypes"
+	"c361main/payment/redisfn"
 	"c361main/user"
 	"fmt"
 	"log"
-	"net/http"
 	"sort"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
@@ -271,7 +272,7 @@ func ProcessClicksFree(clicks []datatypes.Click, param string, entry datatypes.E
 	return ret
 }
 
-func GetClicksByParam(db *gorm.DB, auth *auth.Client, httpClient *http.Client) gin.HandlerFunc {
+func GetClicksByParam(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		startTimer := time.Now()
@@ -284,7 +285,7 @@ func GetClicksByParam(db *gorm.DB, auth *auth.Client, httpClient *http.Client) g
 
 		paying := false
 		if inFirebase {
-			paying, err = user.CheckPaymentStatus(userid, httpClient)
+			paying, err = redisfn.CheckUserPaying(rdb, userid)
 			if err != nil {
 				errorGet(c, err, "failed to correctly check status of user payment")
 				return
