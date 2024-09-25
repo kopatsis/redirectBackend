@@ -96,12 +96,16 @@ func errorSplit(c *gin.Context, err error, banned bool) {
 }
 
 func CookieMiddleware(rdb *redis.Client) gin.HandlerFunc {
+	paths := []string{"/user", "/merge", "/entry", "/search", "/entriescsv", "/clicks", "/clickcsv", "/haspassword", "/emailexchange", "/customcheck", "/multipass", "/webhook", "/administrative", "/check"}
+
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 
-		if path == "/multipass" || strings.HasPrefix(path, "/webhook") || strings.HasPrefix(path, "/administrative") || strings.HasPrefix(path, "/check") {
-			c.Next()
-			return
+		for _, p := range paths {
+			if strings.HasPrefix(path, p) {
+				c.Next()
+				return
+			}
 		}
 
 		userID, date, err := GetCookie(c)
