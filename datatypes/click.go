@@ -5,29 +5,32 @@ import (
 )
 
 type Click struct {
-	ID        int `gorm:"primaryKey"`
-	ParamKey  int `gorm:"index"`
-	Time      time.Time
-	RealURL   string
-	City      string
-	Country   string
-	Browser   string
-	OS        string
-	Platform  string
-	Mobile    bool
-	Bot       bool
-	FromQR    bool
-	IPAddress string
+	ID         int `gorm:"primaryKey"`
+	ParamKey   int `gorm:"index"`
+	Time       time.Time
+	RealURL    string
+	Handle     string
+	City       string
+	Country    string
+	Browser    string
+	OS         string
+	Platform   string
+	Mobile     bool
+	Bot        bool
+	FromQR     bool
+	FromCustom bool
+	IPAddress  string
 }
-
 type ClickDataPaid struct {
 	Param          string      `json:"param"`
 	User           string      `json:"user"`
 	RealURL        string      `json:"realUrl"`
+	Handle         string      `json:"handle"`
 	Total          int         `json:"total"`
 	FromQR         int         `json:"fromQr"`
 	FromBot        int         `json:"fromBot"`
 	FromMobile     int         `json:"fromMobile"`
+	FromCustom     int         `json:"fromCustom"`
 	UniqueVisits   int         `json:"uniqueVisits"`
 	DailyGraph     DateGraph   `json:"dailyGraph"`
 	WeeklyGraph    DateGraph   `json:"weeklyGraph"`
