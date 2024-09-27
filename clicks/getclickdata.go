@@ -143,7 +143,7 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 		User:    userID,
 	}
 
-	total, fromqr, frombot, frommobile := 0, 0, 0, 0
+	total, fromqr, frombot, frommobile, fromcustom := 0, 0, 0, 0, 0
 	dailyMap, weeklyMap := map[time.Time]int{}, map[time.Time]int{}
 	browserMap, operatingMap, cityMap, countryMap := map[string]int{}, map[string]int{}, map[string]int{}, map[string]int{}
 	ipSet := map[string]bool{}
@@ -160,6 +160,9 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 		}
 		if click.Mobile {
 			frommobile++
+		}
+		if click.FromCustom {
+			fromcustom++
 		}
 
 		date, inMap := WeeklyDateFixer(click.Time, startTime)
@@ -224,6 +227,7 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 	ret.FromQR = fromqr
 	ret.FromBot = frombot
 	ret.FromMobile = frommobile
+	ret.FromCustom = fromcustom
 
 	ret.UniqueVisits = len(ipSet)
 

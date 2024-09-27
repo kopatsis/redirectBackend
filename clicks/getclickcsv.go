@@ -53,13 +53,14 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 
 	shortDomain := os.Getenv("SHORT_DOMAIN")
 	headers := []string{
-		"Shortened URL", "Time", "Real URL", "City", "Country", "Browser", "OS", "Platform", "Mobile", "Bot", "From QR Code", "Visitor Number",
+		"Shortened URL ID", "Shortened URL", "Time", "Real URL", "City", "Country", "Browser", "OS", "Platform", "Mobile", "Bot", "From QR Code", "From Custom Handle", "Visitor Number",
 	}
 	writer.Write(headers)
 
 	for _, click := range clicks {
 		record := []string{
-			shortDomain + "/" + realParam,
+			realParam,
+			shortDomain + "/" + click.Handle,
 			click.Time.Format(time.RFC3339),
 			click.RealURL,
 			click.City,
@@ -70,6 +71,7 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 			strconv.FormatBool(click.Mobile),
 			strconv.FormatBool(click.Bot),
 			strconv.FormatBool(click.FromQR),
+			strconv.FormatBool(click.FromCustom),
 			click.IPAddress,
 		}
 

@@ -21,6 +21,7 @@ type Click struct {
 	FromCustom bool
 	IPAddress  string
 }
+
 type ClickDataPaid struct {
 	Param          string      `json:"param"`
 	User           string      `json:"user"`
