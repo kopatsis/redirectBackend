@@ -12,7 +12,10 @@
 <body>
     <div id="loader" style="display: none"></div>
 
-    <button @click="logoutButton">Close and Log Out</button>
+    <div x-data="{ logoutButton }">
+        <button @click="logoutButton">Close and Log Out</button>
+    </div>
+    
 
     <div>
         <div>Email: <b>{{ .Email }}</b></div>

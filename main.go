@@ -14,6 +14,8 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/account"
 )
 
 func main() {
@@ -28,6 +30,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	stripe.Key = os.Getenv("STRIPE_SECRET")
+
+	acct, err := account.Get()
+	if err != nil {
+		log.Fatalf("Stripe API key test failed: %v", err)
+	}
+	log.Printf("Stripe API key test succeeded: Account ID = %s, Email = %s", acct.ID, acct.Email)
 
 	auth := firebaseAuth.InitFirebase()
 

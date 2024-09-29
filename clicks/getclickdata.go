@@ -52,7 +52,7 @@ func WeeklyDateFixer(click, start time.Time) (time.Time, bool) {
 	}
 	elapsed := start.Sub(click)
 	periods := (elapsed + (7 * 24 * time.Hour) - 1) / (7 * 24 * time.Hour)
-	startOfPeriod := start.Add(-periods * 7 * 24 * time.Hour)
+	startOfPeriod := start.Add(-periods * 7 * 24 * time.Hour).Truncate(0)
 	return startOfPeriod, true
 }
 
@@ -62,7 +62,7 @@ func DailyDateFixer(click, start time.Time) (time.Time, bool) {
 	}
 	elapsed := start.Sub(click)
 	periods := (elapsed + (7 * 24 * time.Hour) - 1) / (7 * 24 * time.Hour)
-	startOfPeriod := start.Add(-periods * 7 * 24 * time.Hour)
+	startOfPeriod := start.Add(-periods * 7 * 24 * time.Hour).Truncate(0)
 	return startOfPeriod, true
 }
 
@@ -104,6 +104,13 @@ func ProcessDailyGraph(dateMap map[time.Time]int, start time.Time) datatypes.Dat
 
 func ProcessMaxGraph(strMap map[string]int, max int) datatypes.StringGraph {
 	var graph datatypes.StringGraph
+	graph.Keys = []string{}
+	graph.Data = []int{}
+
+	if len(strMap) == 0 {
+		graph.Keys = append(graph.Keys, "None")
+		graph.Data = append(graph.Data, 0)
+	}
 
 	var pairs []kv
 	for k, v := range strMap {

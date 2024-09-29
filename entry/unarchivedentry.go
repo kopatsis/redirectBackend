@@ -24,11 +24,16 @@ func errorPatch(c *gin.Context, err error, reason string, errorCode int) {
 }
 
 func UnarchivedEntryDB(db *gorm.DB, id int64) (string, error) {
-	var entry datatypes.Entry
 	err := db.Model(&datatypes.Entry{}).
 		Where("id = ?", id).
-		Updates(datatypes.Entry{Archived: false}).
-		First(&entry).Error
+		Update("archived", false).
+		Error
+	if err != nil {
+		return "", err
+	}
+
+	var entry datatypes.Entry
+	err = db.First(&entry, id).Error
 	if err != nil {
 		return "", err
 	}

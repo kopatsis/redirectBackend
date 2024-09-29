@@ -169,7 +169,7 @@ func QueryEntriesShared(db *gorm.DB, c *gin.Context, userid string, paying bool)
 		}
 	}
 
-	more := len(filteredEntries) == 26
+	more := len(filteredEntries) == datatypes.BATCH+1
 
 	if more {
 		filteredEntries = filteredEntries[:len(filteredEntries)-1]
