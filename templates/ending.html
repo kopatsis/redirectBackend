@@ -11,9 +11,11 @@
 
 <body>
 
-    <div id="loader" style="display: none;"></div>
+    <div id="loader" style="display: none;">loading...</div>
 
-    <button @click="logoutButton">Close and Log Out</button>
+    <div x-data="{ logoutButton }">
+        <button @click="logoutButton">Close and Log Out</button>
+      </div>
 
     <div>
         <div>
@@ -69,7 +71,8 @@
                     "Content-Type": "application/json",
                 },
                 credentials: 'include'
-            }).finally(() => {
+            }).catch((e) => console.error(e))
+            .finally(() => {
                 window.close();
             });
         }

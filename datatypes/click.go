@@ -5,8 +5,8 @@ import (
 )
 
 type Click struct {
-	ID         int `gorm:"primaryKey"`
-	ParamKey   int `gorm:"index"`
+	ID         int   `gorm:"primaryKey"`
+	ParamKey   int64 `gorm:"index"`
 	Time       time.Time
 	RealURL    string
 	Handle     string

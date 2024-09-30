@@ -17,10 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateCustomHandleStruct(url, userid string) string {
+func CreateCustomHandleStruct(url, userid string, param int64) string {
 	custom := datatypes.Custom{
 		URL:    url,
 		UserID: userid,
+		Param:  param,
 	}
 
 	str, _ := json.Marshal(custom)
@@ -171,7 +172,7 @@ func PatchCustomHandle(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Ha
 			return
 		}
 
-		if err := rdb.Set(context.Background(), json.Handle, CreateCustomHandleStruct(entry.RealURL, userid), 0).Err(); err != nil {
+		if err := rdb.Set(context.Background(), json.Handle, CreateCustomHandleStruct(entry.RealURL, userid, entry.ID), 0).Err(); err != nil {
 			errorPatch(c, err, "could not save to redis", 400)
 			return
 		}

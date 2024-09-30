@@ -150,6 +150,7 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 		Param:   param,
 		RealURL: entry.RealURL,
 		User:    userID,
+		Handle:  param,
 	}
 
 	total, fromqr, frombot, frommobile, fromcustom := 0, 0, 0, 0, 0
@@ -197,29 +198,29 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 			browser = "Unknown"
 		}
 		if count, exists := browserMap[browser]; exists {
-			browserMap[click.Browser] = count + 1
+			browserMap[browser] = count + 1
 		} else {
-			browserMap[click.Browser] = 1
+			browserMap[browser] = 1
 		}
 
 		os := click.OS
 		if os == "" {
 			os = "Unknown"
 		}
-		if count, exists := operatingMap[click.OS]; exists {
-			operatingMap[click.OS] = count + 1
+		if count, exists := operatingMap[os]; exists {
+			operatingMap[os] = count + 1
 		} else {
-			operatingMap[click.OS] = 1
+			operatingMap[os] = 1
 		}
 
 		country := click.Country
 		if country == "" {
 			country = "Unknown"
 		}
-		if count, exists := countryMap[click.Country]; exists {
-			countryMap[click.Country] = count + 1
+		if count, exists := countryMap[country]; exists {
+			countryMap[country] = count + 1
 		} else {
-			countryMap[click.Country] = 1
+			countryMap[country] = 1
 		}
 
 		justCity := click.City
@@ -289,10 +290,14 @@ func ProcessClicksFree(clicks []datatypes.Click, param string, entry datatypes.E
 			}
 		}
 
-		if count, exists := browserMap[click.Browser]; exists {
-			browserMap[click.Browser] = count + 1
+		browser := click.Browser
+		if browser == "" {
+			browser = "Unknown"
+		}
+		if count, exists := browserMap[browser]; exists {
+			browserMap[browser] = count + 1
 		} else {
-			browserMap[click.Browser] = 1
+			browserMap[browser] = 1
 		}
 	}
 
