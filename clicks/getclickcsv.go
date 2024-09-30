@@ -61,7 +61,7 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 		record := []string{
 			realParam,
 			shortDomain + "/" + click.Handle,
-			click.Time.Format(time.RFC3339),
+			click.Time.Format("2006-01-02 15:04:05"),
 			click.RealURL,
 			click.City,
 			click.Country,
@@ -131,8 +131,8 @@ func GetClickCSV(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerF
 		ServeClickCSV(c, allClicks, c.Param("id"))
 
 		elapsed := time.Since(startTimer)
-		if elapsed < 12*time.Second {
-			time.Sleep(12*time.Second - elapsed)
+		if elapsed < 5*time.Second {
+			time.Sleep(5*time.Second - elapsed)
 		}
 	}
 }

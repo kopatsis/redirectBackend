@@ -86,12 +86,16 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.ShortenedEntry) {
 	writer.Write(headers)
 
 	for _, ent := range entries {
+		custom := ""
+		if ent.CustomHandle != "" {
+			custom = shortDomain + "/" + ent.CustomHandle
+		}
 		record := []string{
 			shortDomain + "/" + ent.Param,
-			ent.Date.Format(time.RFC3339),
+			ent.Date.Format("2006-01-02 15:04:05"),
 			ent.RealURL,
 			strconv.Itoa(ent.Count),
-			shortDomain + "/" + ent.CustomHandle,
+			custom,
 		}
 
 		writer.Write(record)
@@ -145,8 +149,8 @@ func GetEntriesCSV(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Handle
 		ServeEntriesCSV(c, ret)
 
 		elapsed := time.Since(startTimer)
-		if elapsed < 14*time.Second {
-			time.Sleep(14*time.Second - elapsed)
+		if elapsed < 6*time.Second {
+			time.Sleep(6*time.Second - elapsed)
 		}
 	}
 }

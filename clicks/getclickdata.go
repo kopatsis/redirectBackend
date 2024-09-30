@@ -61,8 +61,9 @@ func DailyDateFixer(click, start time.Time) (time.Time, bool) {
 		return click, false
 	}
 	elapsed := start.Sub(click)
-	periods := (elapsed + (7 * 24 * time.Hour) - 1) / (7 * 24 * time.Hour)
-	startOfPeriod := start.Add(-periods * 7 * 24 * time.Hour).Truncate(0)
+	periods := (elapsed + (24 * time.Hour)) / (24 * time.Hour)
+	startOfPeriod := start.Add(-periods * 24 * time.Hour).Truncate(0)
+	fmt.Println(startOfPeriod)
 	return startOfPeriod, true
 }
 
@@ -87,8 +88,9 @@ func ProcessWeeklyGraph(dateMap map[time.Time]int, start time.Time) datatypes.Da
 func ProcessDailyGraph(dateMap map[time.Time]int, start time.Time) datatypes.DateGraph {
 	var graph datatypes.DateGraph
 
-	for i := 6; i >= 0; i-- {
+	for i := 7; i > 0; i-- {
 		dayStart := start.AddDate(0, 0, -i)
+		fmt.Println(dayStart)
 
 		graph.Keys = append(graph.Keys, dayStart)
 
@@ -190,25 +192,45 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 			}
 		}
 
-		if count, exists := browserMap[click.Browser]; exists {
+		browser := click.Browser
+		if browser == "" {
+			browser = "Unknown"
+		}
+		if count, exists := browserMap[browser]; exists {
 			browserMap[click.Browser] = count + 1
 		} else {
 			browserMap[click.Browser] = 1
 		}
 
+		os := click.OS
+		if os == "" {
+			os = "Unknown"
+		}
 		if count, exists := operatingMap[click.OS]; exists {
 			operatingMap[click.OS] = count + 1
 		} else {
 			operatingMap[click.OS] = 1
 		}
 
+		country := click.Country
+		if country == "" {
+			country = "Unknown"
+		}
 		if count, exists := countryMap[click.Country]; exists {
 			countryMap[click.Country] = count + 1
 		} else {
 			countryMap[click.Country] = 1
 		}
 
-		city := click.City + ", " + click.Country
+		justCity := click.City
+		if justCity == "" {
+			justCity = "Unknown"
+		}
+		city := justCity + ", " + country
+		if city == "Unknown, Unknown" {
+			city = "Unknown"
+		}
+		fmt.Println(browser, os, country, city)
 		if count, exists := cityMap[city]; exists {
 			cityMap[city] = count + 1
 		} else {
@@ -334,8 +356,8 @@ func GetClicksByParam(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Han
 		}
 
 		elapsed := time.Since(startTimer)
-		if elapsed < 5*time.Second {
-			time.Sleep(5*time.Second - elapsed)
+		if elapsed < 3*time.Second {
+			time.Sleep(3*time.Second - elapsed)
 		}
 	}
 }

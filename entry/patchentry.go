@@ -6,6 +6,7 @@ import (
 	"c361main/user"
 	"context"
 	"errors"
+	"fmt"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
@@ -67,7 +68,16 @@ func PatchEntryURL(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Handle
 
 		if err := rdb.Set(context.Background(), c.Param("id"), json.URL, 0).Err(); err != nil {
 			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", c.Param("id"), json.URL, err.Error())
+			errorPatch(c, err, fmt.Sprintf("Redis didn't post key: %s, val: %s", c.Param("id"), json.URL), 400)
 			return
+		}
+
+		if entry.CustomHandle != "" {
+			if err := rdb.Set(context.Background(), entry.CustomHandle, json.URL, 0).Err(); err != nil {
+				log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", entry.CustomHandle, json.URL, err.Error())
+				errorPatch(c, err, fmt.Sprintf("Redis didn't post key: %s, val: %s", entry.CustomHandle, json.URL), 400)
+				return
+			}
 		}
 
 		c.JSON(200, gin.H{

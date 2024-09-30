@@ -75,6 +75,10 @@ func GetHandler(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 			return
 		}
 
+		if !userPayment.Active {
+			redisfn.SetUserPaymentActive(rdb, userID, userPayment.SubscriptionID, time.Unix(s.CurrentPeriodEnd, 0))
+		}
+
 		params := &stripe.SetupIntentParams{
 			PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		}
