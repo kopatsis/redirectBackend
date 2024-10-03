@@ -29,7 +29,7 @@ func isEmailSubbed(uid string, db *gorm.DB) (bool, error) {
 	var pref datatypes.UserPreference
 	if err := db.Where("uid = ?", uid).First(&pref).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return false, nil
+			return true, nil
 		}
 		return false, err
 	}

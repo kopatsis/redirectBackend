@@ -6,6 +6,7 @@ import (
 	"c361main/user"
 	"fmt"
 	"net/http"
+	"time"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
@@ -44,6 +45,9 @@ func ExternalEmailHandler(client *http.Client, sendgridClient *sendgrid.Client, 
 }
 
 func actualEmailFunction(client *http.Client, sendgridClient *sendgrid.Client, c *gin.Context) error {
+
+	start := time.Now()
+
 	var form ContactForm
 
 	if err := c.ShouldBind(&form); err != nil {
@@ -59,6 +63,11 @@ func actualEmailFunction(client *http.Client, sendgridClient *sendgrid.Client, c
 
 	if err := sendgridfn.SendFormSubmissionEmail(sendgridClient, form.Email, form.Name, form.Subject, form.Body); err != nil {
 		return err
+	}
+
+	timeElapsed := time.Since(start)
+	if timeElapsed < 2*time.Second {
+		time.Sleep(2*time.Second - timeElapsed)
 	}
 
 	response := map[string]any{"message": "Successfully sent the email! Expect a reply in 1-3 business days, but usually way sooner."}
