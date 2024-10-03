@@ -96,7 +96,7 @@ func errorSplit(c *gin.Context, err error, banned bool) {
 }
 
 func CookieMiddleware(rdb *redis.Client) gin.HandlerFunc {
-	paths := []string{"/user", "/merge", "/entry", "/search", "/entriescsv", "/clicks", "/clickcsv", "/haspassword", "/emailexchange", "/customcheck", "/multipass", "/webhook", "/administrative", "/check", "/verifyturn", "/temporarytest"}
+	paths := []string{"/user", "/merge", "/entry", "/search", "/entriescsv", "/clicks", "/clickcsv", "/haspassword", "/emailexchange", "/customcheck", "/multipass", "/webhook", "/administrative", "/check", "/verifyturn", "/temporarytest", "/emailsubbed"}
 
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path

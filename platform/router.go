@@ -71,8 +71,13 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 	router.GET("/clicks/:id", clicks.GetClicksByParam(db, auth, rdb))
 	router.GET("/clickcsv/:id", clicks.GetClickCSV(db, auth, rdb))
 
-	router.GET("/haspassword", user.HasPasswordHandler(auth, rdb))
-	router.POST("/haspassword", user.HasPasswordPost(auth, rdb))
+	router.GET("/haspassword", user.HasPasswordHandler(auth, db))
+	router.POST("/haspassword", user.HasPasswordPost(auth, db))
+
+	router.GET("/emailsubbed", user.IsEmailSubbedGet(auth, db))
+	router.POST("/emailsubbed", user.IsEmailSubbedPost(auth, db))
+	router.DELETE("/emailsubbed", user.IsEmailSubbedDelete(auth, db))
+	router.GET("/emailsubbed/ubsub/:id", user.UnsubscribeEmailsViaGet(db))
 
 	router.POST("/emailexchange", user.AddExchange(rdb))
 	router.GET("/emailexchange/:id", user.GetExchange(rdb))
