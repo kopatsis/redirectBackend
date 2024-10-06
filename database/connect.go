@@ -29,6 +29,7 @@ func Connect() (*gorm.DB, error) {
 
 	db.AutoMigrate(&datatypes.Entry{})
 	db.AutoMigrate(&datatypes.Click{})
+	db.AutoMigrate(&datatypes.UserPreference{})
 
 	return db, nil
 }
