@@ -91,11 +91,12 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 		}
 
 		shortenedEntry := datatypes.ShortenedEntry{
-			Param:   param,
-			User:    entry.User,
-			RealURL: entry.RealURL,
-			Date:    entry.Date,
-			Count:   entry.Count,
+			Param:        param,
+			User:         entry.User,
+			RealURL:      entry.RealURL,
+			Date:         entry.Date,
+			Count:        entry.Count,
+			CustomHandle: entry.CustomHandle,
 		}
 		shortenedEntries = append(shortenedEntries, shortenedEntry)
 	}
