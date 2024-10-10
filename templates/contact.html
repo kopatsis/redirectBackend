@@ -1,5 +1,10 @@
 <div>
-    <button id="showFormButton">Contact Us</button>
+    <div x-data="{ logoutButton }">
+            <button id="showFormButton">Contact Us</button>
+        <button @click="logoutButton">Close & Logout</button>
+
+      </div>
+    
 
     <div id="formContainer" style="display: none;">
         <button id="closeFormButton">X</button>
@@ -39,6 +44,20 @@
     document.getElementById('closeFormButton').addEventListener('click', function() {
         document.getElementById('formContainer').style.display = 'none';
     });
+
+    function logoutButton() {
+            fetch("/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include'
+            }).catch((e) => console.error(e))
+            .finally(() => {
+                window.close();
+                window.location.href = 'https://shortentrack.com';
+            });
+        }
 
     function submitForm(event) {
         event.preventDefault();
