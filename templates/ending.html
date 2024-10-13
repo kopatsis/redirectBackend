@@ -1,84 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ending</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js" defer></script>
-</head>
+    <script
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js"
+      defer
+    ></script>
+  </head>
 
-<body>
+  <body>
+    <div id="loader" style="display: none">loading...</div>
 
-    <div id="loader" style="display: none;">loading...</div>
+    <div class="outer">
+      <div class="main">
+        <header>
+          <div class="corner">ST</div>
+          <div class="main-message">Shorten Track</div>
+        </header>
 
-    <div x-data="{ logoutButton }">
-        <button @click="logoutButton">Close and Log Out</button>
-      </div>
-
-    <div>
         <div>
-            Email: <b>{{ .Email }}</b>
+          <div class="centered">
+            <div>Account: <b>{{ .Email }}</b></div>
+          </div>
+          <br />
+
+          <div>
+            Your membership has (unfortunately) been cancelled and benefits will
+            (unfortunately) be ending.
+          </div>
+
+          <div>Membership End Date: {{ .EndDate.Format "01/02/2006" }}</div>
+
+          <div>But it's not too late to un-cancel</div>
+
+          <div x-data="undoHandler()">
+            <button class="submit" @click="undoCancellation">
+              Uncancel Membership
+            </button>
+          </div>
+
+          <div style="color: rgb(222, 0, 0)" id="error-message"></div>
+
+          <div class="centered">{{ template "contact.html" . }}</div>
         </div>
-
-        <div>Your membership has (unfortunately) been cancelled and benefits will (unfortunately) be ending.</div>
-
-        <div>Membership End Date: {{ .EndDate.Format "01/02/2006" }}</div>
-
-        <div>But it's not too late to un-cancel</div>
-
-        <div x-data="undoHandler()">
-            <button class="submit" @click="undoCancellation">Uncancel Membership</button>
-        </div>
-
-        <div style="color: rgb(222, 0, 0)" id="error-message"></div>
+      </div>
     </div>
 
     <script>
-        function undoHandler() {
-            return {
-                errorMessage: "",
-                async undoCancellation() {
-                    document.getElementById("loader").style.display = "flex";
-                    try {
-                        const response = await fetch("/subscription/uncancel", {
-                            method: "PATCH",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            credentials: "include",
-                        });
-                        if (response.ok) {
-                            location.reload();
-                        } else {
-                            this.errorMessage =
-                                "Failed to undo cancellation. Please try again.";
-                        }
-                    } catch (error) {
-                        this.errorMessage = "An error occurred. Please try again.";
-                    } finally {
-                        document.getElementById("loader").style.display = "none";
-                    }
-                },
-            };
-        }
-
-        function logoutButton() {
-            fetch("/logout", {
-                method: "POST",
+      function undoHandler() {
+        return {
+          errorMessage: "",
+          async undoCancellation() {
+            document.getElementById("loader").style.display = "flex";
+            try {
+              const response = await fetch("/subscription/uncancel", {
+                method: "PATCH",
                 headers: {
-                    "Content-Type": "application/json",
+                  "Content-Type": "application/json",
                 },
-                credentials: 'include'
-            }).catch((e) => console.error(e))
-            .finally(() => {
-                window.close();
-                window.location.href = 'https://shortentrack.com';
-            });
-        }
+                credentials: "include",
+              });
+              if (response.ok) {
+                location.reload();
+              } else {
+                this.errorMessage =
+                  "Failed to undo cancellation. Please try again.";
+              }
+            } catch (error) {
+              this.errorMessage = "An error occurred. Please try again.";
+            } finally {
+              document.getElementById("loader").style.display = "none";
+            }
+          },
+        };
+      }
+
+      function logoutButton() {
+        fetch("/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        })
+          .catch((e) => console.error(e))
+          .finally(() => {
+            window.close();
+            window.location.href = "https://shortentrack.com";
+          });
+      }
     </script>
-
-</body>
-
+  </body>
 </html>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("/assets/JetBrains/JetBrainsMono-Regular.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Bold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraLight.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Light.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Medium.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-SemiBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Thin.ttf") format("truetype");
+  }
+
+  .main {
+    max-width: 900px;
+    background-color: rgb(36, 36, 36);
+    height: 100dvh;
+    min-width: min(100dvw, 750px);
+    padding: 25px;
+  }
+
+  .outer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 10px;
+  }
+
+  button {
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    border: none;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+  button:hover {
+    background: #ff3e00;
+    color: white;
+    outline: none;
+  }
+
+  body {
+    background-color: black;
+    color: #f7f9fa;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  header > div {
+    margin: 6px;
+  }
+
+  .corner {
+    font-family: "Anton", Impact, Haettenschweiler, "Arial Narrow Bold",
+      sans-serif;
+    text-decoration: none;
+    font-size: 3em;
+    color: #ff3e00;
+  }
+
+  .main-message {
+    font-size: 3em;
+    font-weight: bold;
+    text-decoration: none;
+    color: #f7f9fa;
+  }
+
+  .total {
+    font-family: "Poppins", Arial, Helvetica, sans-serif;
+  }
+</style>

@@ -1,86 +1,281 @@
 <div>
-    <div x-data="{ logoutButton }">
-            <button id="showFormButton">Contact Us</button>
-        <button @click="logoutButton">Close & Logout</button>
+  <div x-data="{ logoutButton }">
+    <button id="showFormButton">Contact Us</button>
+    <button @click="logoutButton">Close & Logout</button>
+  </div>
 
-      </div>
-    
-
-    <div id="formContainer" style="display: none;">
-        <button id="closeFormButton">X</button>
+  <div
+    id="formContainer"
+    style="display: none"
+    class="backdrop"
+    tabindex="0"
+    role="button"
+    aria-label="Close modal"
+    onclick="closer()"
+  >
+    <div
+      id="modalhold"
+      class="modal scale-transition close"
+      onclick="event.stopPropagation()"
+    >
+      <div class="outer">
+        <div class="closeline">
+          <button class="link-button" id="closeFormButton">&times;</button>
+        </div>
+        <h2>Contact Us</h2>
         <form id="contactForm" onsubmit="submitForm(event)">
-            <div>
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name">
-            </div>
-            <div>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" value="{{ .Email }}">
-            </div>
+          <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" placeholder="Your name" />
+          </div>
+          <div>
+            <label for="email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value="{{ .Email }}"
+              placeholder="Your email"
+            />
+          </div>
 
-            <div>
-                <label for="subject">Subject:</label>
-                <input type="text" id="subject" name="subject">
-            </div>
-            <div>
-                <label for="body">Body:</label>
-                <textarea id="body" name="body"></textarea>
-            </div>
+          <div>
+            <label for="subject">Subject:</label>
+            <input
+              type="text"
+              id="subject"
+              name="subject"
+              placeholder="Subject of email"
+            />
+          </div>
+          <div>
+            <label for="body">Body:</label>
+            <textarea
+              id="body"
+              name="body"
+              rows="5"
+              placeholder="Content of email"
+            ></textarea>
+          </div>
 
-            <div id="cf-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAAAiN0D-hYmv3ulQQ"></div>
+          <div class="buttonsend">
+            <div
+              id="cf-turnstile"
+              class="cf-turnstile"
+              data-sitekey="0x4AAAAAAAiN0D-hYmv3ulQQ"
+            ></div>
+          </div>
 
+          <div class="buttonsend">
             <button type="submit">Send</button>
+          </div>
         </form>
 
         <div id="message"></div>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-    document.getElementById('showFormButton').addEventListener('click', function() {
-        document.getElementById('formContainer').style.display = 'block';
+  function closer() {
+    const element = document.getElementById("modalhold");
+    element.classList.remove("open");
+    element.classList.add("close");
+    document.getElementById("formContainer").style.display = "none";
+  }
+
+  document
+    .getElementById("showFormButton")
+    .addEventListener("click", function () {
+      console.log("????????????");
+      const element = document.getElementById("modalhold");
+      element.classList.remove("close");
+      element.classList.add("open");
+      document.getElementById("formContainer").style.display = "flex";
     });
 
-    document.getElementById('closeFormButton').addEventListener('click', function() {
-        document.getElementById('formContainer').style.display = 'none';
+  document
+    .getElementById("closeFormButton")
+    .addEventListener("click", function () {
+      closer();
     });
 
-    function logoutButton() {
-            fetch("/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: 'include'
-            }).catch((e) => console.error(e))
-            .finally(() => {
-                window.close();
-                window.location.href = 'https://shortentrack.com';
-            });
-        }
-
-    function submitForm(event) {
-        event.preventDefault();
-        const formData = new FormData(event.target);
-
-        fetch('/helpemail', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error();
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('message').textContent = data.message || 'Form submitted successfully!';
-            document.getElementById('contactForm').style.display = 'none';
-        })
-        .catch(() => {
-            document.getElementById('message').textContent = 'Failed to send the email. Please try again later.';
-            document.getElementById('contactForm').style.display = 'none';
-        });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      closer();
     }
+  });
+
+  function logoutButton() {
+    fetch("/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .catch((e) => console.error(e))
+      .finally(() => {
+        window.close();
+        window.location.href = "https://shortentrack.com";
+      });
+  }
+
+  function submitForm(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+
+    fetch("/helpemail", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error();
+        }
+        return response.json();
+      })
+      .then((data) => {
+        document.getElementById("message").textContent =
+          data.message || "Form submitted successfully!";
+        document.getElementById("contactForm").style.display = "none";
+      })
+      .catch(() => {
+        document.getElementById("message").textContent =
+          "Failed to send the email. Please try again later.";
+        document.getElementById("contactForm").style.display = "none";
+      });
+  }
 </script>
+
+<style>
+  .backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.44);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    cursor: pointer;
+  }
+
+  .modal {
+    box-shadow: rgba(255, 62, 0, 0.4) 5px 5px, rgba(255, 62, 0, 0.3) 10px 10px,
+      rgba(255, 62, 0, 0.2) 15px 15px, rgba(255, 62, 0, 0.1) 20px 20px,
+      rgba(255, 62, 0, 0.05) 25px 25px;
+    padding: 20px;
+    background: #1a1d1e;
+    border-radius: 5px;
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
+    z-index: 2001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    cursor: default;
+    max-height: 90dvh;
+    max-width: min(100dvw, 960px);
+    min-width: min(500px, 95dvw);
+  }
+
+  .buttonsend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .link-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-size: 24px;
+    color: var(--color-text);
+  }
+
+  .link-button:hover,
+  .link-button:focus {
+    background: none;
+    color: var(--color-text);
+  }
+
+  .closeline {
+    display: flex;
+    justify-content: right;
+    width: 100%;
+  }
+
+  h2 {
+    font-size: 2em;
+    font-weight: bold;
+  }
+
+  textarea {
+    width: 100%;
+    font-size: 1em;
+    font-family: inherit;
+    margin-bottom: 8px;
+  }
+
+  label {
+    display: block;
+  }
+
+  .outer {
+    margin: 20px;
+    min-width: min(500px, 95dvw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  form {
+    width: 100%;
+  }
+
+  input {
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 1em;
+    font-family: inherit;
+  }
+
+  .scale-transition {
+    transform: scale(0.5);
+  }
+
+  .scale-transition.open {
+    animation: scaleUp 300ms forwards;
+  }
+
+  .scale-transition.close {
+    animation: scaleDown 300ms forwards;
+  }
+
+  @keyframes scaleUp {
+    from {
+      transform: scale(0.5);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scaleDown {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(0.5);
+    }
+  }
+</style>

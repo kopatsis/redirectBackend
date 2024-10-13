@@ -21,23 +21,29 @@
 
     <div class="outer">
       <div class="main">
-        <!-- <div x-data="{ logoutButton }">
-          <button @click="logoutButton">Close and Log Out</button>
-        </div> -->
+
+        <header>
+          <div class="corner">ST</div>
+          <div class="main-message">Shorten Track</div>
+        </header>
 
         <div>
-          <div>Email: <b>{{ .Email }}</b></div>
+          <div class="centered">
+            <div>Account: <b>{{ .Email }}</b></div>
+          </div>
+          <br />
 
           <form class="form" id="payment-form">
-            <div class="total" id="total">Total: $4.99</div>
             <div id="payment-element"></div>
-            <div>
-                <button class="submit" type="submit">Subscribe</button>
+            <!-- <div class="centered">
+              <div class="total" id="total">Total: $4.99</div>
+            </div> -->
+            <div class="centered">
+              <button class="submit" type="submit">Pay $4.99</button>
             </div>
-            
           </form>
 
-          {{ template "contact.html" . }}
+          <div class="centered">{{ template "contact.html" . }}</div>
 
           <div style="color: rgb(222, 0, 0)" id="error-message"></div>
         </div>
@@ -134,23 +140,92 @@
 </html>
 
 <style>
-    .main {
-        max-width: 750px;
-        background-color: rgb(36, 36, 36);
-        height: 100dvh;
-        min-width: min(100dvw, 600px);
-        padding: 25px;
-    }
+  @import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-    .outer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        
-    }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("/assets/JetBrains/JetBrainsMono-Regular.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Bold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraLight.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Light.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Medium.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-SemiBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Thin.ttf") format("truetype");
+  }
 
-    body {
-        background-color: black;
-        color: white;
-    }
+  .main {
+    max-width: 900px;
+    background-color: rgb(36, 36, 36);
+    height: 100dvh;
+    min-width: min(100dvw, 750px);
+    padding: 25px;
+  }
+
+  .outer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 10px;
+  }
+
+  button {
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    border: none;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+  button:hover {
+    background: #ff3e00;
+    color: white;
+    outline: none;
+  }
+
+  body {
+    background-color: black;
+    color: #f7f9fa;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  header > div {
+    margin: 6px;
+  }
+
+  .corner {
+    font-family: "Anton", Impact, Haettenschweiler, "Arial Narrow Bold",
+      sans-serif;
+    text-decoration: none;
+    font-size: 3em;
+    color: #ff3e00;
+  }
+
+  .main-message {
+    font-size: 3em;
+    font-weight: bold;
+    text-decoration: none;
+    color: #f7f9fa;
+  }
+
+  .total {
+    font-family: "Poppins", Arial, Helvetica, sans-serif;
+  }
+
+  .submit {
+    min-width: 200px;
+  }
 </style>

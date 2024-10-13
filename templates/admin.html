@@ -19,74 +19,87 @@
   <body>
     <div id="loader" style="display: none">loading...</div>
 
-    <div x-data="{ logoutButton }">
-      <button @click="logoutButton">Close and Log Out</button>
-    </div>
+    <div class="outer">
+      <div class="main">
+        <header>
+          <div class="corner">ST</div>
+          <div class="main-message">Shorten Track</div>
+        </header>
 
-    <div>
-      <div>Email: <b>{{ .Email }}</b></div>
-
-      {{ if .Expiring }}
-      <span style="color: red"
-        >Please update your payment information ASAP.</span
-      >
-      {{ end }}
-
-      <div>You are currently on the monthly paid membership plan.</div>
-
-      <div>Next Billing Date: {{ .EndDate.Format "01/02/2006" }}</div>
-
-      <div>
-        <div>Default Payment Method Information:</div>
-        {{ if eq .PaymentType "Card" }}
         <div>
-          Card Brand: {{ .CardBrand }}<br />
-          Last Four Digits: **** **** **** {{ .LastFour }}<br />
-          Expiration Date: {{ .ExpMonth }} / {{ .ExpYear }}
-        </div>
-        {{ else }}
-        <div>Payment Type: {{ .PaymentType }}</div>
-        {{ end }}
-
-        <div x-data="{ showForm: false }">
-          <button @click="showForm = !showForm">
-            Update Default Payment Information
-          </button>
-
-          <div x-show="showForm">
-            <form class="form" id="payment-form">
-              <div id="payment-element"></div>
-              <button class="submit" type="submit">Update</button>
-              <button @click="showForm = false" type="button">Cancel</button>
-            </form>
+          <div class="centered">
+            <div>Account: <b>{{ .Email }}</b></div>
           </div>
-        </div>
-      </div>
+          <br />
 
-      <div>
-        <div>
-          No longer down for the paid membership? Cancel below and you will no
-          longer be charged.
-        </div>
-        <div x-data="{ showConfirm: false }">
-          <button x-show="!showConfirm" @click="showConfirm = true">
-            Cancel Membership
-          </button>
+          {{ if .Expiring }}
+          <span style="color: red"
+            >Please update your payment information ASAP.</span
+          >
+          {{ end }}
 
-          <div x-show="showConfirm">
-            <div>Are you sure you want to cancel your membership?</div>
-            <div class="buttonRow">
-              <button @click="cancelMembership">Cancel Membership</button>
-              <button @click="showConfirm = false">Go Back</button>
+          <div>You are currently on the monthly paid membership plan.</div>
+
+          <div>Next Billing Date: {{ .EndDate.Format "01/02/2006" }}</div>
+
+          <div>
+            <div>Default Payment Method Information:</div>
+            {{ if eq .PaymentType "Card" }}
+            <div>
+              Card Brand: {{ .CardBrand }}<br />
+              Last Four Digits: **** **** **** {{ .LastFour }}<br />
+              Expiration Date: {{ .ExpMonth }} / {{ .ExpYear }}
+            </div>
+            {{ else }}
+            <div>Payment Type: {{ .PaymentType }}</div>
+            {{ end }}
+
+            <div x-data="{ showForm: false }">
+              <button @click="showForm = !showForm">
+                Update Default Payment Information
+              </button>
+
+              <div x-show="showForm">
+                <form class="form" id="payment-form">
+                  <div id="payment-element"></div>
+                  <button class="submit" type="submit">Update</button>
+                  <button @click="showForm = false" type="button">
+                    Cancel
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-        <div>
-          You can always re-activate it before the current billing period ends.
+
+          <div>
+            <div>
+              No longer down for the paid membership? Cancel below and you will
+              no longer be charged.
+            </div>
+            <div x-data="{ showConfirm: false }">
+              <button x-show="!showConfirm" @click="showConfirm = true">
+                Cancel Membership
+              </button>
+
+              <div x-show="showConfirm">
+                <div>Are you sure you want to cancel your membership?</div>
+                <div class="buttonRow">
+                  <button @click="cancelMembership">Cancel Membership</button>
+                  <button @click="showConfirm = false">Go Back</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              You can always re-activate it before the current billing period
+              ends.
+            </div>
+          </div>
+
+          <div class="centered">{{ template "contact.html" . }}</div>
+
+          <div style="color: rgb(222, 0, 0)" id="error-message"></div>
         </div>
       </div>
-
-      <div style="color: rgb(222, 0, 0)" id="error-message"></div>
     </div>
 
     <script>
@@ -174,18 +187,106 @@
       });
 
       function logoutButton() {
-            fetch("/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: 'include'
-            }).catch((e) => console.error(e))
-            .finally(() => {
-                window.close();
-                window.location.href = 'https://shortentrack.com';
-            });
-        }
+        fetch("/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        })
+          .catch((e) => console.error(e))
+          .finally(() => {
+            window.close();
+            window.location.href = "https://shortentrack.com";
+          });
+      }
     </script>
   </body>
 </html>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("/assets/JetBrains/JetBrainsMono-Regular.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Bold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-ExtraLight.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Light.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Medium.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-SemiBold.ttf") format("truetype"),
+      url("/assets/JetBrains/JetBrainsMono-Thin.ttf") format("truetype");
+  }
+
+  .main {
+    max-width: 900px;
+    background-color: rgb(36, 36, 36);
+    height: 100dvh;
+    min-width: min(100dvw, 750px);
+    padding: 25px;
+  }
+
+  .outer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 10px;
+  }
+
+  button {
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    border: none;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+  button:hover {
+    background: #ff3e00;
+    color: white;
+    outline: none;
+  }
+
+  body {
+    background-color: black;
+    color: #f7f9fa;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  header > div {
+    margin: 6px;
+  }
+
+  .corner {
+    font-family: "Anton", Impact, Haettenschweiler, "Arial Narrow Bold",
+      sans-serif;
+    text-decoration: none;
+    font-size: 3em;
+    color: #ff3e00;
+  }
+
+  .main-message {
+    font-size: 3em;
+    font-weight: bold;
+    text-decoration: none;
+    color: #f7f9fa;
+  }
+
+  .total {
+    font-family: "Poppins", Arial, Helvetica, sans-serif;
+  }
+</style>

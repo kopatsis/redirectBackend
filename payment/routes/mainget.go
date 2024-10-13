@@ -6,7 +6,9 @@ import (
 	stripefunc "c361main/specialty/stripe"
 	"context"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
@@ -15,6 +17,14 @@ import (
 	"github.com/stripe/stripe-go/v72/setupintent"
 	"github.com/stripe/stripe-go/v72/sub"
 )
+
+func Title(s string) string {
+	words := strings.Fields(s)
+	for i, word := range words {
+		words[i] = string(unicode.ToUpper(rune(word[0]))) + strings.ToLower(word[1:])
+	}
+	return strings.Join(words, " ")
+}
 
 func GetHandler(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -96,7 +106,7 @@ func GetHandler(rdb *redis.Client, auth *auth.Client) gin.HandlerFunc {
 
 		c.HTML(http.StatusOK, "admin.html", gin.H{
 			"PaymentType": paymentType,
-			"CardBrand":   cardBrand,
+			"CardBrand":   Title(cardBrand),
 			"LastFour":    lastFour,
 			"ExpMonth":    expMonth,
 			"ExpYear":     expYear,

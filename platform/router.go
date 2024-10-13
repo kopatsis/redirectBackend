@@ -19,6 +19,8 @@ import (
 func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Client, sendgridClient *sendgrid.Client) *gin.Engine {
 	router := gin.Default()
 
+	router.Static("/assets", "./assets")
+
 	router.LoadHTMLGlob("templates/*")
 
 	router.Use(middleware.CORSMiddleware())
