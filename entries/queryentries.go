@@ -1,11 +1,11 @@
 package entries
 
 import (
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/payment/redisfn"
 	"c361main/user"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,9 +17,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetSingleEntryDB(db *gorm.DB, user string, id int64) (datatypes.ShortenedEntry, error, bool) {
+func GetSingleEntryDB(db *gorm.DB, user string, id int) (datatypes.ShortenedEntry, error, bool) {
 	var entry datatypes.Entry
-	err := db.First(&entry, id).Error
+	err := db.Where("id = ?", id).First(&entry).Error
 	if err != nil {
 		return datatypes.ShortenedEntry{}, err, false
 	} else if entry.User != user {
@@ -28,18 +28,13 @@ func GetSingleEntryDB(db *gorm.DB, user string, id int64) (datatypes.ShortenedEn
 		return datatypes.ShortenedEntry{}, errors.New("entry archived"), true
 	}
 
-	param, err := convert.ToSixFour(entry.ID)
-	if err != nil {
-		return datatypes.ShortenedEntry{}, err, false
-	}
-
 	ret := datatypes.ShortenedEntry{
-		Param:        param,
-		User:         entry.User,
-		RealURL:      entry.RealURL,
-		Date:         entry.Date,
-		Count:        entry.Count,
-		CustomHandle: entry.CustomHandle,
+		Param:   entry.Param,
+		User:    entry.User,
+		RealURL: entry.RealURL,
+		Date:    entry.Date,
+		Count:   entry.Count,
+		Custom:  entry.Custom,
 	}
 
 	return ret, nil, false
@@ -85,18 +80,16 @@ func GetQueriedDB(db *gorm.DB, user, sort string, page int) ([]datatypes.Shorten
 
 	for _, entry := range entries {
 
-		param, err := convert.ToSixFour(entry.ID)
-		if err != nil {
-			return nil, 0, err
-		}
+		fmt.Println(entry)
+		fmt.Println(entry.Custom)
 
 		shortenedEntry := datatypes.ShortenedEntry{
-			Param:        param,
-			User:         entry.User,
-			RealURL:      entry.RealURL,
-			Date:         entry.Date,
-			Count:        entry.Count,
-			CustomHandle: entry.CustomHandle,
+			Param:   entry.Param,
+			User:    entry.User,
+			RealURL: entry.RealURL,
+			Date:    entry.Date,
+			Count:   entry.Count,
+			Custom:  entry.Custom,
 		}
 		shortenedEntries = append(shortenedEntries, shortenedEntry)
 	}
@@ -114,7 +107,7 @@ func SearchFilterEntries(db *gorm.DB, user, search, sort string, page int, payin
 
 	for _, entry := range entries {
 		if paying {
-			if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) && !fuzzy.MatchFold(search, entry.CustomHandle) {
+			if !strings.Contains(strings.ToLower(entry.Param), strings.ToLower(search)) && !fuzzy.MatchFold(search, entry.RealURL) {
 				continue
 			}
 		} else {
@@ -176,6 +169,8 @@ func QueryEntriesShared(db *gorm.DB, c *gin.Context, userid string, paying bool)
 		filteredEntries = filteredEntries[:len(filteredEntries)-1]
 	}
 
+	fmt.Println(filteredEntries)
+
 	ret := datatypes.EntryList{
 		FilteredEntries: filteredEntries,
 		More:            more,
@@ -211,12 +206,11 @@ func QueryEntries(auth *auth.Client, db *gorm.DB, rdb *redis.Client) gin.Handler
 			errorGet(c, err, reason)
 		}
 
-		if !paying {
-			for i, e := range response.FilteredEntries {
-				e.CustomHandle = ""
-				response.FilteredEntries[i] = e
-			}
-		}
+		// if !paying {
+		// 	for i, e := range response.FilteredEntries {
+		// 		response.FilteredEntries[i] = e
+		// 	}
+		// }
 
 		c.JSON(200, gin.H{
 			"response": response,
@@ -228,7 +222,13 @@ func QueryEntries(auth *auth.Client, db *gorm.DB, rdb *redis.Client) gin.Handler
 func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		id10, err := convert.FromSixFour(c.Param("id"))
+		id := c.Param("id")
+		if id == "" {
+			errorGet(c, errors.New("no id param provided"), "Failed to convert id param")
+			return
+		}
+
+		idInt, err := strconv.Atoi(id)
 		if err != nil {
 			errorGet(c, err, "Failed to convert id param")
 			return
@@ -268,7 +268,7 @@ func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, rdb *redis.Client) g
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			entryResult, entryErr, entryArchived = GetSingleEntryDB(db, userid, id10)
+			entryResult, entryErr, entryArchived = GetSingleEntryDB(db, userid, idInt)
 		}()
 
 		wg.Wait()
@@ -278,13 +278,11 @@ func QueryEntriesWithSingle(auth *auth.Client, db *gorm.DB, rdb *redis.Client) g
 			return
 		}
 
-		if !paying {
-			entryResult.CustomHandle = ""
-			for i, e := range entriesResult.FilteredEntries {
-				e.CustomHandle = ""
-				entriesResult.FilteredEntries[i] = e
-			}
-		}
+		// if !paying {
+		// 	for i, e := range entriesResult.FilteredEntries {
+		// 		entriesResult.FilteredEntries[i] = e
+		// 	}
+		// }
 
 		response := gin.H{
 			"error":    "",

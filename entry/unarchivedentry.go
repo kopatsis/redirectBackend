@@ -1,7 +1,6 @@
 package entry
 
 import (
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/user"
 	"context"
@@ -23,9 +22,9 @@ func errorPatch(c *gin.Context, err error, reason string, errorCode int) {
 	})
 }
 
-func UnarchivedEntryDB(db *gorm.DB, id int64) (string, error) {
+func UnarchivedEntryDB(db *gorm.DB, id string) (string, error) {
 	err := db.Model(&datatypes.Entry{}).
-		Where("id = ?", id).
+		Where("param = ?", id).
 		Update("archived", false).
 		Error
 	if err != nil {
@@ -49,14 +48,14 @@ func UnarchivedEntry(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Hand
 			return
 		}
 
-		id10, err := convert.FromSixFour(c.Param("id"))
-		if err != nil {
-			errorPatch(c, err, "Failed to convert id param", 400)
+		id := c.Param("id")
+		if id == "" {
+			errorPatch(c, errors.New("no id param"), "Failed to convert id param", 400)
 			return
 		}
 
 		var entry datatypes.Entry
-		err = db.First(&entry, id10).Error
+		err = db.Where("param = ?", id).First(&entry).Error
 		if err != nil {
 			errorDelete(c, err, "Failed to retrieve entry", 400)
 			return
@@ -65,7 +64,7 @@ func UnarchivedEntry(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Hand
 			return
 		}
 
-		url, err := UnarchivedEntryDB(db, id10)
+		url, err := UnarchivedEntryDB(db, id)
 		if err != nil {
 			errorPatch(c, err, "Failed to archive on the database", 400)
 			return

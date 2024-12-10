@@ -1,7 +1,6 @@
 package entries
 
 import (
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/user"
 	"fmt"
@@ -29,16 +28,13 @@ func GetEntriesDB(db *gorm.DB, user string) ([]datatypes.ShortenedEntry, error) 
 
 	for _, entry := range entries {
 
-		param, err := convert.ToSixFour(entry.ID)
-		if err != nil {
-			return nil, err
-		}
-
 		shortenedEntry := datatypes.ShortenedEntry{
-			Param:   param,
+			Param:   entry.Param,
 			User:    entry.User,
 			RealURL: entry.RealURL,
 			Date:    entry.Date,
+			Count:   entry.Count,
+			Custom:  entry.Custom,
 		}
 		shortenedEntries = append(shortenedEntries, shortenedEntry)
 	}

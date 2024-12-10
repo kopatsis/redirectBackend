@@ -1,7 +1,6 @@
 package entry
 
 import (
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/user"
 	"context"
@@ -15,8 +14,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func PatchEntryURLDB(db *gorm.DB, id int64, url string) error {
-	return db.Model(&datatypes.Entry{}).Where("id = ?", id).Updates(datatypes.Entry{
+func PatchEntryURLDB(db *gorm.DB, id string, url string) error {
+	return db.Model(&datatypes.Entry{}).Where("param = ?", id).Updates(datatypes.Entry{
 		RealURL: url,
 	}).Error
 }
@@ -30,14 +29,14 @@ func PatchEntryURL(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Handle
 			return
 		}
 
-		id10, err := convert.FromSixFour(c.Param("id"))
-		if err != nil {
-			errorPatch(c, err, "Failed to convert id param", 400)
+		id := c.Param("id")
+		if id == "" {
+			errorPatch(c, errors.New("no param attached"), "No Param", 400)
 			return
 		}
 
 		var entry datatypes.Entry
-		err = db.First(&entry, id10).Error
+		err = db.Where("param = ?", id).First(&entry).Error
 		if err != nil {
 			errorDelete(c, err, "Failed to retrieve entry", 400)
 			return
@@ -61,7 +60,7 @@ func PatchEntryURL(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Handle
 			return
 		}
 
-		if err := PatchEntryURLDB(db, id10, json.URL); err != nil {
+		if err := PatchEntryURLDB(db, id, json.URL); err != nil {
 			errorPatch(c, err, "Failed to patch real url on the database", 400)
 			return
 		}
@@ -70,14 +69,6 @@ func PatchEntryURL(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Handle
 			log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", c.Param("id"), json.URL, err.Error())
 			errorPatch(c, err, fmt.Sprintf("Redis didn't post key: %s, val: %s", c.Param("id"), json.URL), 400)
 			return
-		}
-
-		if entry.CustomHandle != "" {
-			if err := rdb.Set(context.Background(), entry.CustomHandle, json.URL, 0).Err(); err != nil {
-				log.Errorf("Redis didn't post key: %s, val: %s, err: %s\n", entry.CustomHandle, json.URL, err.Error())
-				errorPatch(c, err, fmt.Sprintf("Redis didn't post key: %s, val: %s", entry.CustomHandle, json.URL), 400)
-				return
-			}
 		}
 
 		c.JSON(200, gin.H{

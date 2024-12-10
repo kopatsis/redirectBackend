@@ -27,7 +27,7 @@ func DeleteArchivedEntries(db *gorm.DB) {
 			log.Printf("Error deleting archived entries with LOW_PRIORITY: %v", err)
 		}
 
-		err = db.Exec("DELETE LOW_PRIORITY FROM datatypes_clicks WHERE param_key IN ?", entryIDs).Error
+		err = db.Exec("DELETE LOW_PRIORITY FROM datatypes_clicks WHERE param IN ?", entryIDs).Error
 		if err != nil {
 			log.Printf("Error deleting clicks associated with archived entries with LOW_PRIORITY: %v", err)
 		}

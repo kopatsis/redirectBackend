@@ -8,10 +8,11 @@ import (
 const BATCH = 20
 
 type Entry struct {
-	ID           int64      `gorm:"primaryKey;autoIncrement:false" json:"-"`
+	ID           int        `gorm:"primaryKey;autoIncrement" json:"-"`
+	Param        string     `gorm:"index;unique" json:"handle"`
 	User         string     `gorm:"index" json:"user"`
 	RealURL      string     `json:"url"`
-	CustomHandle string     `gorm:"index" json:"-"`
+	Custom       bool       `json:"custom"`
 	Count        int        `json:"-"`
 	Archived     bool       `json:"-"`
 	Date         time.Time  `json:"-"`
@@ -19,12 +20,12 @@ type Entry struct {
 }
 
 type ShortenedEntry struct {
-	Param        string    `json:"param"`
-	User         string    `json:"user"`
-	RealURL      string    `json:"url"`
-	Date         time.Time `json:"date"`
-	Count        int       `json:"count"`
-	CustomHandle string    `json:"custom"`
+	Param   string    `json:"param"`
+	User    string    `json:"user"`
+	RealURL string    `json:"url"`
+	Date    time.Time `json:"date"`
+	Count   int       `json:"count"`
+	Custom  bool      `json:"custom"`
 }
 
 type EntryList struct {

@@ -2,7 +2,6 @@ package entries
 
 import (
 	"bytes"
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/payment/redisfn"
 	"c361main/user"
@@ -56,18 +55,14 @@ func createLengthed(entries []datatypes.Entry) ([]datatypes.ShortenedEntry, erro
 	ret := []datatypes.ShortenedEntry{}
 
 	for _, ent := range entries {
-		param, err := convert.ToSixFour(ent.ID)
-		if err != nil {
-			return nil, err
-		}
 
 		current := datatypes.ShortenedEntry{
-			Param:        param,
-			User:         ent.User,
-			RealURL:      ent.RealURL,
-			Date:         ent.Date,
-			Count:        ent.Count,
-			CustomHandle: ent.CustomHandle,
+			Param:   ent.Param,
+			User:    ent.User,
+			RealURL: ent.RealURL,
+			Date:    ent.Date,
+			Count:   ent.Count,
+			Custom:  ent.Custom,
 		}
 		ret = append(ret, current)
 	}
@@ -81,21 +76,16 @@ func ServeEntriesCSV(c *gin.Context, entries []datatypes.ShortenedEntry) {
 
 	shortDomain := os.Getenv("SHORT_DOMAIN")
 	headers := []string{
-		"Shortened URL", "Date Created", "Real URL", "Click Count", "Custom Shortened URL",
+		"Shortened URL", "Date Created", "Current Original URL", "Click Count",
 	}
 	writer.Write(headers)
 
 	for _, ent := range entries {
-		custom := ""
-		if ent.CustomHandle != "" {
-			custom = shortDomain + "/" + ent.CustomHandle
-		}
 		record := []string{
 			shortDomain + "/" + ent.Param,
 			ent.Date.Format("2006-01-02 15:04:05"),
 			ent.RealURL,
 			strconv.Itoa(ent.Count),
-			custom,
 		}
 
 		writer.Write(record)

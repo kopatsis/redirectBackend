@@ -31,7 +31,7 @@ var RESERVE = []int64{
 }
 
 var FILTER = []string{
-	"shit", "fuck", "bitch", "cunt", "fag", "whore", "dick", "ass", "nigga", "tard",
+	"shit", "fuck", "bitch", "cunt", "fag", "whore", "dick", "ass", "nigga", "tard", "nig",
 }
 
 // Sets error message for post request using gin Context
@@ -49,26 +49,19 @@ func IsValidURL(rawURL string) bool {
 	return matched
 }
 
-func PostEntryDB(db *gorm.DB, entry *datatypes.Entry) (int64, error) {
-	if err := db.Create(entry).Error; err != nil {
-		return 0, err
-	}
-	return entry.ID, nil
-}
-
-func PostEntryFullDB(db *gorm.DB, entry *datatypes.Entry) (uniqueIss bool, actualErr error) {
+func PostEntryFullDB(db *gorm.DB, entry *datatypes.Entry) (id int, uniqueIss bool, actualErr error) {
 	err := db.Create(entry).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return true, err
+			return 0, true, err
 		} else {
-			return false, err
+			return 0, false, err
 		}
 	}
-	return false, nil
+	return entry.ID, false, nil
 }
 
-func GetTheNewID() (int64, string, error) {
+func GetTheNewID() (string, error) {
 	try := 0
 	for try < 128 {
 		attempt := int64(rand.Intn(convert.LIMIT-64+1) + 64)
@@ -91,15 +84,17 @@ func GetTheNewID() (int64, string, error) {
 			continue
 		}
 
-		return attempt, st, nil
+		return st, nil
 	}
-	return 0, "", errors.New("unable to generate a number within constraints")
+	return "", errors.New("unable to generate a number within constraints")
 }
 
-func AttemptToPost(db *gorm.DB, rdb *redis.Client, sendgridClient *sendgrid.Client, entry *datatypes.Entry) (string, error) {
+func AttemptToPost(db *gorm.DB, rdb *redis.Client, sendgridClient *sendgrid.Client, entry *datatypes.Entry) (string, int, error) {
 	try := 0
+
+	var idRet int
 	for try < 10 {
-		id, param, err := GetTheNewID()
+		param, err := GetTheNewID()
 		if err != nil {
 			try++
 			continue
@@ -111,37 +106,41 @@ func AttemptToPost(db *gorm.DB, rdb *redis.Client, sendgridClient *sendgrid.Clie
 			continue
 		}
 
-		entry.ID = id
+		entry.Param = param
 
-		if uniqueIssue, err := PostEntryFullDB(db, entry); err != nil {
+		if id, uniqueIssue, err := PostEntryFullDB(db, entry); err != nil {
 			if uniqueIssue {
 				try += 5
 				continue
 			} else {
-				return "", err
+				return "", 0, err
 			}
+		} else {
+			idRet = id
 		}
 
-		return param, nil
+		return param, idRet, nil
 	}
 
 	newID := RESERVE[rand.Intn(20)]
 	st, err := convert.ToSixFour(newID)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	if _, err := PostEntryFullDB(db, entry); err != nil {
+	if id, _, err := PostEntryFullDB(db, entry); err != nil {
 		if err := ErrorAlertEmail(sendgridClient, newID, true); err != nil {
 			log.Println("Couldn't send error alert email for reserve fail: " + err.Error())
 		}
-		return "", err
+		return "", 0, err
+	} else {
+		idRet = id
 	}
 
 	if err := ErrorAlertEmail(sendgridClient, newID, false); err != nil {
 		log.Println("Couldn't send error alert email for reserve success: " + err.Error())
 	}
-	return st, nil
+	return st, idRet, nil
 }
 
 func ErrorAlertEmail(sendgridClient *sendgrid.Client, id int64, failed bool) error {
@@ -182,19 +181,57 @@ func PostEntry(db *gorm.DB, rdb *redis.Client, auth *auth.Client, sendgridClient
 			return
 		}
 
-		sixFour, err := AttemptToPost(db, rdb, sendgridClient, &entry)
-		if err != nil {
-			errorPost(c, err, "Could not post to db")
+		if entry.Custom && entry.Param == "" {
+			errorPost(c, errors.New("custom handle missing"), "Error with custom Handle")
+			return
+		}
+		if entry.Custom && len(entry.Param) < 7 || len(entry.Param) > 128 {
+			errorPost(c, errors.New("custom handle length incorrect"), "Error with custom Handle")
+			return
+		}
+		if entry.Custom && !regexp.MustCompile(`^[a-zA-Z0-9_-]*$`).MatchString(entry.Param) {
+			errorPost(c, errors.New("custom handle chars incorrect"), "Error with custom Handle")
+			return
+		}
+		if !entry.Custom && entry.Param != "" {
+			errorPost(c, errors.New("custom bool field incorrect"), "Error with custom Handle")
 			return
 		}
 
-		if err := rdb.Set(context.Background(), sixFour, entry.RealURL, 0).Err(); err != nil {
-			errorPost(c, err, "Could not post to redis")
-			return
+		var sixFour string
+		var retID int
+		if entry.Custom {
+			newID, uniqueIssue, err := PostEntryFullDB(db, &entry)
+			if err != nil {
+				if uniqueIssue {
+					errorPost(c, err, "Not a unique custom handle")
+				} else {
+					errorPost(c, err, "Error other than unique custom handle")
+				}
+				return
+			}
+			sixFour = entry.Param
+			if err := rdb.Set(context.Background(), sixFour, CreateCustomHandleStruct(entry.RealURL, userid, newID), 0).Err(); err != nil {
+				errorPost(c, err, "Could not post to redis")
+				return
+			}
+			retID = newID
+		} else {
+			var newID int
+			sixFour, newID, err = AttemptToPost(db, rdb, sendgridClient, &entry)
+			if err != nil {
+				errorPost(c, err, "Could not post to db")
+				return
+			}
+			if err := rdb.Set(context.Background(), sixFour, CreateCustomHandleStruct(entry.RealURL, userid, newID), 0).Err(); err != nil {
+				errorPost(c, err, "Could not post to redis")
+				return
+			}
+			retID = newID
 		}
 
 		c.JSON(201, gin.H{
-			"parameter": sixFour,
+			"id": retID,
 		})
 	}
 }

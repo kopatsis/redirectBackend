@@ -64,7 +64,7 @@ func New(db *gorm.DB, auth *auth.Client, rdb *redis.Client, httpClient *http.Cli
 	router.PATCH("/entry/:id", entry.PatchEntryURL(db, auth, rdb))
 
 	router.PATCH("/entry/:id/addcustom", entry.PatchCustomHandle(db, auth, rdb))
-	router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb))
+	// router.PATCH("/entry/:id/deletecustom", entry.DeleteCustomHandle(db, auth, rdb))
 
 	router.GET("/search", entries.QueryEntries(auth, db, rdb))
 	router.GET("/search/:id", entries.QueryEntriesWithSingle(auth, db, rdb))

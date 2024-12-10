@@ -2,7 +2,6 @@ package clicks
 
 import (
 	"bytes"
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/payment/redisfn"
 	"c361main/user"
@@ -18,14 +17,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetJustClicksDB(db *gorm.DB, paramkey int64, user string) ([]datatypes.Click, error, bool) {
-	err := db.Model(&datatypes.Entry{}).Where("id = ? AND user = ?", paramkey, user).Select("id").First(&datatypes.Entry{}).Error
+func GetJustClicksDB(db *gorm.DB, paramkey string, user string) ([]datatypes.Click, error, bool) {
+	var entry datatypes.Entry
+	err := db.Model(&datatypes.Entry{}).Where("param = ? AND user = ?", paramkey, user).Select("id").First(&entry).Error
 	if err != nil {
 		return nil, err, true
 	}
 
 	var clicks []datatypes.Click
-	err = db.Where("param_key = ?", paramkey).Find(&clicks).Error
+	err = db.Where("entry_id = ?", entry.ID).Find(&clicks).Error
 	if err != nil {
 		return nil, err, false
 	}
@@ -53,14 +53,13 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 
 	shortDomain := os.Getenv("SHORT_DOMAIN")
 	headers := []string{
-		"Shortened URL ID", "Shortened URL Used", "Time", "Real URL", "City", "Country", "Browser", "OS", "Platform", "Mobile", "Bot", "From QR Code", "From Custom Handle", "Visitor Number",
+		"Shortened URL", "Time", "Real URL", "City", "Country", "Browser", "OS", "Platform", "Mobile", "Bot", "From QR Code", "From Custom Handle", "Visitor Number",
 	}
 	writer.Write(headers)
 
 	for _, click := range clicks {
 		record := []string{
-			realParam,
-			shortDomain + "/" + click.Handle,
+			shortDomain + "/" + click.Param,
 			click.Time.Format("2006-01-02 15:04:05"),
 			click.RealURL,
 			click.City,
@@ -71,7 +70,6 @@ func ServeClickCSV(c *gin.Context, clicks []datatypes.Click, realParam string) {
 			strconv.FormatBool(click.Mobile),
 			strconv.FormatBool(click.Bot),
 			strconv.FormatBool(click.FromQR),
-			strconv.FormatBool(click.FromCustom),
 			click.IPAddress,
 		}
 
@@ -111,13 +109,13 @@ func GetClickCSV(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.HandlerF
 			return
 		}
 
-		id10, err := convert.FromSixFour(c.Param("id"))
-		if err != nil {
-			errorGet(c, err, "Failed to convert id param")
+		id := c.Param("id")
+		if id == "" {
+			errorGet(c, errors.New("no id param"), "Failed to convert id param")
 			return
 		}
 
-		allClicks, err, userIssue := GetJustClicksDB(db, id10, userid)
+		allClicks, err, userIssue := GetJustClicksDB(db, id, userid)
 		if err != nil {
 			if userIssue {
 				errorGet(c, err, "Failed to get entry that matches ID and user for clicks from DB")

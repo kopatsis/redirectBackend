@@ -1,10 +1,10 @@
 package clicks
 
 import (
-	"c361main/convert"
 	"c361main/datatypes"
 	"c361main/payment/redisfn"
 	"c361main/user"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -29,16 +29,16 @@ func errorGet(c *gin.Context, err error, reason string) {
 	})
 }
 
-func GetClicksDB(db *gorm.DB, paramkey int64, user string) (datatypes.Entry, []datatypes.Click, error, bool) {
+func GetClicksDB(db *gorm.DB, paramkey string, user string) (datatypes.Entry, []datatypes.Click, error, bool) {
 	var entry datatypes.Entry
 
-	err := db.Where("id = ? AND user = ? AND archived = ?", paramkey, user, false).First(&entry).Error
+	err := db.Where("param = ? AND user = ? AND archived = ?", paramkey, user, false).First(&entry).Error
 	if err != nil {
 		return entry, nil, err, true
 	}
 
 	var clicks []datatypes.Click
-	err = db.Where("param_key = ?", paramkey).Find(&clicks).Error
+	err = db.Where("entry_id = ?", entry.ID).Find(&clicks).Error
 	if err != nil {
 		return entry, nil, err, false
 	}
@@ -153,7 +153,7 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 		Handle:  param,
 	}
 
-	total, fromqr, frombot, frommobile, fromcustom := 0, 0, 0, 0, 0
+	total, fromqr, frombot, frommobile := 0, 0, 0, 0
 	dailyMap, weeklyMap := map[time.Time]int{}, map[time.Time]int{}
 	browserMap, operatingMap, cityMap, countryMap := map[string]int{}, map[string]int{}, map[string]int{}, map[string]int{}
 	ipSet := map[string]bool{}
@@ -170,9 +170,6 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 		}
 		if click.Mobile {
 			frommobile++
-		}
-		if click.FromCustom {
-			fromcustom++
 		}
 
 		date, inMap := WeeklyDateFixer(click.Time, startTime)
@@ -257,7 +254,6 @@ func ProcessClicksPaid(clicks []datatypes.Click, param string, entry datatypes.E
 	ret.FromQR = fromqr
 	ret.FromBot = frombot
 	ret.FromMobile = frommobile
-	ret.FromCustom = fromcustom
 
 	ret.UniqueVisits = len(ipSet)
 
@@ -330,13 +326,13 @@ func GetClicksByParam(db *gorm.DB, auth *auth.Client, rdb *redis.Client) gin.Han
 			}
 		}
 
-		id10, err := convert.FromSixFour(c.Param("id"))
-		if err != nil {
-			errorGet(c, err, "Failed to convert id param")
+		id := c.Param("id")
+		if id == "" {
+			errorGet(c, errors.New("no id param"), "Failed to convert id param")
 			return
 		}
 
-		entry, allClicks, err, userIssue := GetClicksDB(db, id10, userid)
+		entry, allClicks, err, userIssue := GetClicksDB(db, id, userid)
 		if err != nil {
 			if userIssue {
 				errorGet(c, err, "Failed to get entry that matches ID and user for clicks from DB")
